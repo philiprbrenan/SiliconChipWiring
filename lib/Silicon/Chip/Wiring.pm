@@ -19,6 +19,8 @@ makeDieConfess;
 my $debug = 0;                                                                  # Debug if set
 sub debugMask {1}                                                               # Adds a grid to the drawing of a bus line
 
+#D1 Construct                                                                   # Create a Silicon chip wiring diagrams
+
 sub new(%)                                                                      # New wiring diagram
  {my (%options) = @_;                                                           # Options
   genHash(__PACKAGE__,                                                          # Wiring diagram
@@ -52,14 +54,13 @@ sub wire($%)                                                                    
     d => $d,                                                                    # The direction to draw first, x: 0, y:1
    );
 
-
   return undef unless $D->canLayX($w) and $D->canLayY($w);                      # Confirm we can lay the wire
   push $D->wires->@*, $w;                                                       # Append wire to diagram
 
   $w
  }
 
-sub canLayX($$)                                                                 # Confirm we can lay a wire in X
+sub canLayX($$)                                                                 #P Confirm we can lay a wire in X
  {my ($D, $W) = @_;                                                             # Drawing, wire
   my ($x, $y, $X, $Y, $d) = @$W{qw(x y X Y d)};
 
@@ -87,7 +88,7 @@ sub canLayX($$)                                                                 
   1                                                                             # Did not overlay any existing X segment
  }
 
-sub canLayY($$)                                                                 # Confirm we can lay a wire in Y
+sub canLayY($$)                                                                 #P Confirm we can lay a wire in Y
  {my ($D, $W) = @_;                                                             # Drawing, wire
   my ($x, $y, $X, $Y, $d) = @$W{qw(x y X Y d)};
 
@@ -115,6 +116,8 @@ sub canLayY($$)                                                                 
    }
   1                                                                             # Did not overlay any existing Y segment
  }
+
+#D1 Visualize                                                                   # Visualize a Silicon chip wiring diagrams
 
 sub svg($%)                                                                     #P Draw the bus lines.
  {my ($D, %options) = @_;                                                       # Wiring diagram, options
@@ -166,6 +169,8 @@ sub svg($%)                                                                     
 
   $t
  }
+
+#D0
 
 # Tests
 
