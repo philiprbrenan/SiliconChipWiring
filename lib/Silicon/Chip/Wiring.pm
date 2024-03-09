@@ -171,6 +171,244 @@ sub svg($%)                                                                     
  }
 
 #D0
+#-------------------------------------------------------------------------------
+# Export
+#-------------------------------------------------------------------------------
+
+use Exporter qw(import);
+
+use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
+
+# containingFolder
+
+@ISA          = qw(Exporter);
+@EXPORT       = qw();
+@EXPORT_OK    = qw(connectBits connectWords n nn setBits setWords);
+%EXPORT_TAGS = (all=>[@EXPORT, @EXPORT_OK]);
+
+#Images https://raw.githubusercontent.com/philiprbrenan/SiliconChip/main/lib/Silicon/svg/
+
+=pod
+
+=encoding utf-8
+
+=for html <p><a href="https://github.com/philiprbrenan/SiliconChip"><img src="https://github.com/philiprbrenan/SiliconChip/workflows/Test/badge.svg"></a>
+
+=head1 Name
+
+Silicon::Chip - Design a L<silicon|https://en.wikipedia.org/wiki/Silicon> L<chip|https://en.wikipedia.org/wiki/Integrated_circuit> by combining L<logic gates|https://en.wikipedia.org/wiki/Logic_gate> and sub L<chips|https://en.wikipedia.org/wiki/Integrated_circuit>.
+
+=head1 Synopsis
+
+=head1 Description
+
+Design a L<silicon|https://en.wikipedia.org/wiki/Silicon> L<chip|https://en.wikipedia.org/wiki/Integrated_circuit> by combining L<logic gates|https://en.wikipedia.org/wiki/Logic_gate> and sub L<chips|https://en.wikipedia.org/wiki/Integrated_circuit>.
+
+
+Version 20240308.
+
+
+The following sections describe the methods in each functional area of this
+module.  For an alphabetic listing of all methods by name see L<Index|/Index>.
+
+
+
+=head1 Construct
+
+Create a Silicon chip wiring diagrams
+
+=head2 new (%options)
+
+New wiring diagram
+
+     Parameter  Description
+  1  %options   Options
+
+B<Example:>
+
+
+  if (1)                                                                           
+  
+   {my $d = new;  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+    $d->wire(x=>1, y=>3, X=>3, Y=>1);
+    $d->wire(x=>7, y=>3, X=>5, Y=>1);
+    $d->wire(x=>1, y=>5, X=>3, Y=>7);
+    $d->wire(x=>7, y=>5, X=>5, Y=>7);
+  
+    $d->wire(x=>1, y=>11, X=>3, Y=>9,  d=>1);
+    $d->wire(x=>7, y=>11, X=>5, Y=>9,  d=>1);
+    $d->wire(x=>1, y=>13, X=>3, Y=>15, d=>1);
+    $d->wire(x=>7, y=>13, X=>5, Y=>15, d=>1);
+  
+    ok(!$d->wire(x=>1, y=>8, X=>2, Y=>10,  d=>1));
+    $d->svg(file=>"square");
+   }
+  
+
+=head2 wire($D, %options)
+
+New wire on wiring diagram
+
+     Parameter  Description
+  1  $D         Diagram
+  2  %options   Options
+
+B<Example:>
+
+
+  if (1)                                                                           
+   {my $d = new;
+  
+    $d->wire(x=>1, y=>3, X=>3, Y=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+  
+    $d->wire(x=>7, y=>3, X=>5, Y=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+  
+    $d->wire(x=>1, y=>5, X=>3, Y=>7);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+  
+    $d->wire(x=>7, y=>5, X=>5, Y=>7);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+  
+  
+    $d->wire(x=>1, y=>11, X=>3, Y=>9,  d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+  
+    $d->wire(x=>7, y=>11, X=>5, Y=>9,  d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+  
+    $d->wire(x=>1, y=>13, X=>3, Y=>15, d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+  
+    $d->wire(x=>7, y=>13, X=>5, Y=>15, d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+  
+  
+    ok(!$d->wire(x=>1, y=>8, X=>2, Y=>10,  d=>1));  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+    $d->svg(file=>"square");
+   }
+  
+
+=head1 Visualize
+
+Visualize a Silicon chip wiring diagrams
+
+
+=head1 Hash Definitions
+
+
+
+
+=head2 Silicon::Chip::Wiring Definition
+
+
+Wire
+
+
+
+
+=head3 Output fields
+
+
+=head4 X
+
+End   x position of wire
+
+=head4 Y
+
+End   y position of wire
+
+=head4 d
+
+The direction to draw first, x: 0, y:1
+
+=head4 wires
+
+Wires on diagram
+
+=head4 x
+
+Start x position of wire
+
+=head4 y
+
+Start y position of wire
+
+
+
+=head1 Private Methods
+
+=head2 canLayX ($D, $W)
+
+Confirm we can lay a wire in X
+
+     Parameter  Description
+  1  $D         Drawing
+  2  $W         Wire
+
+=head2 canLayY ($D, $W)
+
+Confirm we can lay a wire in Y
+
+     Parameter  Description
+  1  $D         Drawing
+  2  $W         Wire
+
+=head2 svg ($D, %options)
+
+Draw the bus lines.
+
+     Parameter  Description
+  1  $D         Wiring diagram
+  2  %options   Options
+
+
+=head1 Index
+
+
+1 L<canLayX|/canLayX> - Confirm we can lay a wire in X
+
+2 L<canLayY|/canLayY> - Confirm we can lay a wire in Y
+
+3 L<new|/new> - New wiring diagram
+
+4 L<svg|/svg> - Draw the bus lines.
+
+5 L<wire|/wire> - New wire on wiring diagram
+
+=head1 Installation
+
+This module is written in 100% Pure Perl and, thus, it is easy to read,
+comprehend, use, modify and install via B<cpan>:
+
+  sudo cpan install Silicon::Chip::Wiring
+
+=head1 Author
+
+L<philiprbrenan@gmail.com|mailto:philiprbrenan@gmail.com>
+
+L<http://www.appaapps.com|http://www.appaapps.com>
+
+=head1 Copyright
+
+Copyright (c) 2016-2023 Philip R Brenan.
+
+This module is free software. It may be used, redistributed and/or modified
+under the same terms as Perl itself.
+
+=cut
+
+
+
+goto finish if caller;                                                          # Skip testing if we are being called as a module
+clearFolder(q(svg), 99);                                                        # Clear the output svg folder
+my $start = time;
+eval "use Test::More tests=>1";
+eval "Test::More->builder->output('/dev/null')" if -e q(/home/phil/);
+eval {goto latest};
 
 # Tests
 
