@@ -14,7 +14,7 @@ Silicon::Chip::Wiring - Wire up a [silicon](https://en.wikipedia.org/wiki/Silico
 
 # Description
 
-Wire up a &lt;silicon|https://en.wikipedia.org/wiki/Silicon> [chip](https://en.wikipedia.org/wiki/Integrated_circuit) to combine [logic gates](https://en.wikipedia.org/wiki/Logic_gate)
+Wire up a [silicon](https://en.wikipedia.org/wiki/Silicon) [chip](https://en.wikipedia.org/wiki/Integrated_circuit) to combine [logic gates](https://en.wikipedia.org/wiki/Logic_gate)
 
 Version 20240308.
 
