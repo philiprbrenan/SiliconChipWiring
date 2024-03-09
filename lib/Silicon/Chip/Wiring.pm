@@ -206,6 +206,7 @@ Silicon::Chip::Wiring - Wire up a L<silicon|https://en.wikipedia.org/wiki/Silico
 
 Wire up a L<silicon|https://en.wikipedia.org/wiki/Silicon> L<chip|https://en.wikipedia.org/wiki/Integrated_circuit> to combine L<logic gates|https://en.wikipedia.org/wiki/Logic_gate>
 
+
 Version 20240308.
 
 
@@ -228,24 +229,24 @@ New wiring diagram
 B<Example:>
 
 
-  if (1)
-
+  if (1)                                                                           
+  
    {my $d = new;  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
     $d->wire(x=>1, y=>3, X=>3, Y=>1);
     $d->wire(x=>7, y=>3, X=>5, Y=>1);
     $d->wire(x=>1, y=>5, X=>3, Y=>7);
     $d->wire(x=>7, y=>5, X=>5, Y=>7);
-
+  
     $d->wire(x=>1, y=>11, X=>3, Y=>9,  d=>1);
     $d->wire(x=>7, y=>11, X=>5, Y=>9,  d=>1);
     $d->wire(x=>1, y=>13, X=>3, Y=>15, d=>1);
     $d->wire(x=>7, y=>13, X=>5, Y=>15, d=>1);
-
+  
     ok(!$d->wire(x=>1, y=>8, X=>2, Y=>10,  d=>1));
     $d->svg(file=>"square");
    }
-
+  
 
 =head2 wire($D, %options)
 
@@ -258,40 +259,40 @@ New wire on wiring diagram
 B<Example:>
 
 
-  if (1)
+  if (1)                                                                           
    {my $d = new;
-
+  
     $d->wire(x=>1, y=>3, X=>3, Y=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
+  
     $d->wire(x=>7, y=>3, X=>5, Y=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
+  
     $d->wire(x=>1, y=>5, X=>3, Y=>7);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
+  
     $d->wire(x=>7, y=>5, X=>5, Y=>7);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
-
+  
+  
     $d->wire(x=>1, y=>11, X=>3, Y=>9,  d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
+  
     $d->wire(x=>7, y=>11, X=>5, Y=>9,  d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
+  
     $d->wire(x=>1, y=>13, X=>3, Y=>15, d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
+  
     $d->wire(x=>7, y=>13, X=>5, Y=>15, d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
-
+  
+  
     ok(!$d->wire(x=>1, y=>8, X=>2, Y=>10,  d=>1));  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
     $d->svg(file=>"square");
    }
-
+  
 
 =head1 Visualize
 
@@ -404,7 +405,6 @@ under the same terms as Perl itself.
 
 
 
-goto finish if caller;                                                          # Skip testing if we are being called as a module
 clearFolder(q(svg), 99);                                                        # Clear the output svg folder
 my $start = time;
 eval "use Test::More tests=>1";
