@@ -1,0 +1,43 @@
+# Test 2024-03-09 at 02:49:12
+
+name: Test
+
+on:
+  push
+
+jobs:
+
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: 'main'
+
+    - uses: actions/checkout@v3
+      with:
+        repository: philiprbrenan/DataTableText
+        path: dtt
+
+    - uses: actions/checkout@v3
+      with:
+        repository: philiprbrenan/SvgSimple
+        path: svg
+
+    - name: Install Tree
+      run:
+        sudo apt install tree
+
+    - name: Tree
+      run:
+        tree
+
+    - name: Cpan
+      run:  sudo cpan install -T Data::Dump
+    - name: Ubuntu update
+      run:  sudo apt update
+
+    - name: Test Silicon Wiring
+      run:
+        perl -Idtt/lib -Isvg/lib  lib/Silicon/Chip/Wiring.pm
