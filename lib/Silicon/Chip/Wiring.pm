@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I/home/phil/perl/cpan/DataTableText/lib/ -I/home/phil/perl/cpan/SvgSimple/lib/
 #-------------------------------------------------------------------------------
-# Wiring diagram
+# Wiring up a silicon chip to transform software into hardware.
 # Philip R Brenan at appaapps dot com, Appa Apps Ltd Inc., 2024
 #-------------------------------------------------------------------------------
 use v5.34;
@@ -20,7 +20,7 @@ sub debugMask {1}                                                               
 
 #D1 Construct                                                                   # Create a Silicon chip wiring diagrams
 
-sub new(%)                                                                      # New wiring diagram
+sub new(%)                                                                      # New wiring diagram.
  {my (%options) = @_;                                                           # Options
   genHash(__PACKAGE__,                                                          # Wiring diagram
     %options,                                                                   # Options
@@ -28,7 +28,7 @@ sub new(%)                                                                      
    );
  }
 
-sub wire($%)                                                                    # New wire on wiring diagram
+sub wire($%)                                                                    # New wire on a wiring diagram.
  {my ($D, %options) = @_;                                                       # Diagram, options
 
   my ($x, $X, $y, $Y, $d) = @options{qw(x X y Y d)};
@@ -39,7 +39,7 @@ sub wire($%)                                                                    
   $x == $X and $y == $Y and confess "Start and end of connection are in the same cell";
   $d //= 0;
 
-  if ($x > $X)                                                                   # Swap into normal order
+  if ($x > $X)                                                                  # Swap into normal order
    {($x, $X) = ($X, $x);
     ($y, $Y) = ($Y, $y);
     $d = !$d;
@@ -118,7 +118,7 @@ sub canLayY($$)                                                                 
 
 #D1 Visualize                                                                   # Visualize a Silicon chip wiring diagrams
 
-sub svg($%)                                                                     #P Draw the bus lines.
+sub svg($%)                                                                     # Draw the bus lines.
  {my ($D, %options) = @_;                                                       # Wiring diagram, options
   my @defaults = (defaults=>                                                    # Default values
    {stroke_width => 1,
@@ -195,7 +195,7 @@ use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
 =head1 Name
 
-Silicon::Chip::Wiring - Wire up a L<silicon|https://en.wikipedia.org/wiki/Silicon> L<chip|https://en.wikipedia.org/wiki/Integrated_circuit> to combine L<logic gates|https://en.wikipedia.org/wiki/Logic_gate>
+Silicon::Chip::Wiring - Wire up a L<silicon|https://en.wikipedia.org/wiki/Silicon> L<chip|https://en.wikipedia.org/wiki/Integrated_circuit> to combine L<logic gates|https://en.wikipedia.org/wiki/Logic_gate> to transform software into hardware.
 
 =head1 Synopsis
 
@@ -203,15 +203,12 @@ Silicon::Chip::Wiring - Wire up a L<silicon|https://en.wikipedia.org/wiki/Silico
 
 =head1 Description
 
-Wire up a L<silicon|https://en.wikipedia.org/wiki/Silicon> L<chip|https://en.wikipedia.org/wiki/Integrated_circuit> to combine L<logic gates|https://en.wikipedia.org/wiki/Logic_gate>
-
+Wire up a L<silicon|https://en.wikipedia.org/wiki/Silicon> L<chip|https://en.wikipedia.org/wiki/Integrated_circuit> to combine L<logic gates|https://en.wikipedia.org/wiki/Logic_gate> to transform software into hardware.
 
 Version 20240308.
 
-
 The following sections describe the methods in each functional area of this
 module.  For an alphabetic listing of all methods by name see L<Index|/Index>.
-
 
 
 =head1 Construct
