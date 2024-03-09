@@ -27,34 +27,35 @@ Create a Silicon chip wiring diagrams
 
 ## new (%options)
 
-New wiring diagram
+New wiring diagram.
 
        Parameter  Description
     1  %options   Options
 
 **Example:**
 
-    if (1)
-
+    if (1)                                                                           
+    
      {my $d = new;  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
       $d->wire(x=>1, y=>3, X=>3, Y=>1);
       $d->wire(x=>7, y=>3, X=>5, Y=>1);
       $d->wire(x=>1, y=>5, X=>3, Y=>7);
       $d->wire(x=>7, y=>5, X=>5, Y=>7);
-
+    
       $d->wire(x=>1, y=>11, X=>3, Y=>9,  d=>1);
       $d->wire(x=>7, y=>11, X=>5, Y=>9,  d=>1);
       $d->wire(x=>1, y=>13, X=>3, Y=>15, d=>1);
       $d->wire(x=>7, y=>13, X=>5, Y=>15, d=>1);
-
+    
       ok(!$d->wire(x=>1, y=>8, X=>2, Y=>10,  d=>1));
       $d->svg(file=>"square");
      }
+    
 
 ## wire($D, %options)
 
-New wire on wiring diagram
+New wire on a wiring diagram.
 
        Parameter  Description
     1  $D         Diagram
@@ -62,43 +63,64 @@ New wire on wiring diagram
 
 **Example:**
 
-    if (1)
+    if (1)                                                                           
      {my $d = new;
-
+    
       $d->wire(x=>1, y=>3, X=>3, Y=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
+    
       $d->wire(x=>7, y=>3, X=>5, Y=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
+    
       $d->wire(x=>1, y=>5, X=>3, Y=>7);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
+    
       $d->wire(x=>7, y=>5, X=>5, Y=>7);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
-
+    
+    
       $d->wire(x=>1, y=>11, X=>3, Y=>9,  d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
+    
       $d->wire(x=>7, y=>11, X=>5, Y=>9,  d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
+    
       $d->wire(x=>1, y=>13, X=>3, Y=>15, d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
+    
       $d->wire(x=>7, y=>13, X=>5, Y=>15, d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
-
+    
+    
       ok(!$d->wire(x=>1, y=>8, X=>2, Y=>10,  d=>1));  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
       $d->svg(file=>"square");
      }
+    
 
 # Visualize
 
 Visualize a Silicon chip wiring diagrams
+
+## svg ($D, %options)
+
+Draw the bus lines.
+
+       Parameter  Description
+    1  $D         Wiring diagram
+    2  %options   Options
+
+**Example:**
+
+    if (1)                                                                          
+     {my $d = new;
+      $d->wire(x=>1, y=>1, X=>1, Y=>3);
+      $d->wire(x=>1, y=>2, X=>1, Y=>4);
+    
+      $d->svg(file=>"overY1");  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+     }
+    
 
 # Hash Definitions
 
@@ -150,25 +172,17 @@ Confirm we can lay a wire in Y
     1  $D         Drawing
     2  $W         Wire
 
-## svg ($D, %options)
-
-Draw the bus lines.
-
-       Parameter  Description
-    1  $D         Wiring diagram
-    2  %options   Options
-
 # Index
 
 1 [canLayX](#canlayx) - Confirm we can lay a wire in X
 
 2 [canLayY](#canlayy) - Confirm we can lay a wire in Y
 
-3 [new](#new) - New wiring diagram
+3 [new](#new) - New wiring diagram.
 
 4 [svg](#svg) - Draw the bus lines.
 
-5 [wire](#wire) - New wire on wiring diagram
+5 [wire](#wire) - New wire on a wiring diagram.
 
 # Installation
 
