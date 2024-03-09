@@ -205,10 +205,13 @@ Silicon::Chip::Wiring - Wire up a L<silicon|https://en.wikipedia.org/wiki/Silico
 
 Wire up a L<silicon|https://en.wikipedia.org/wiki/Silicon> L<chip|https://en.wikipedia.org/wiki/Integrated_circuit> to combine L<logic gates|https://en.wikipedia.org/wiki/Logic_gate> to transform software into hardware.
 
+
 Version 20240308.
+
 
 The following sections describe the methods in each functional area of this
 module.  For an alphabetic listing of all methods by name see L<Index|/Index>.
+
 
 
 =head1 Construct
@@ -217,7 +220,7 @@ Create a Silicon chip wiring diagrams
 
 =head2 new (%options)
 
-New wiring diagram
+New wiring diagram.
 
      Parameter  Description
   1  %options   Options
@@ -225,28 +228,28 @@ New wiring diagram
 B<Example:>
 
 
-  if (1)
-
+  if (1)                                                                           
+  
    {my $d = new;  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
     $d->wire(x=>1, y=>3, X=>3, Y=>1);
     $d->wire(x=>7, y=>3, X=>5, Y=>1);
     $d->wire(x=>1, y=>5, X=>3, Y=>7);
     $d->wire(x=>7, y=>5, X=>5, Y=>7);
-
+  
     $d->wire(x=>1, y=>11, X=>3, Y=>9,  d=>1);
     $d->wire(x=>7, y=>11, X=>5, Y=>9,  d=>1);
     $d->wire(x=>1, y=>13, X=>3, Y=>15, d=>1);
     $d->wire(x=>7, y=>13, X=>5, Y=>15, d=>1);
-
+  
     ok(!$d->wire(x=>1, y=>8, X=>2, Y=>10,  d=>1));
     $d->svg(file=>"square");
    }
-
+  
 
 =head2 wire($D, %options)
 
-New wire on wiring diagram
+New wire on a wiring diagram.
 
      Parameter  Description
   1  $D         Diagram
@@ -255,44 +258,65 @@ New wire on wiring diagram
 B<Example:>
 
 
-  if (1)
+  if (1)                                                                           
    {my $d = new;
-
+  
     $d->wire(x=>1, y=>3, X=>3, Y=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
+  
     $d->wire(x=>7, y=>3, X=>5, Y=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
+  
     $d->wire(x=>1, y=>5, X=>3, Y=>7);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
+  
     $d->wire(x=>7, y=>5, X=>5, Y=>7);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
-
+  
+  
     $d->wire(x=>1, y=>11, X=>3, Y=>9,  d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
+  
     $d->wire(x=>7, y=>11, X=>5, Y=>9,  d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
+  
     $d->wire(x=>1, y=>13, X=>3, Y=>15, d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
+  
     $d->wire(x=>7, y=>13, X=>5, Y=>15, d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
-
+  
+  
     ok(!$d->wire(x=>1, y=>8, X=>2, Y=>10,  d=>1));  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
     $d->svg(file=>"square");
    }
-
+  
 
 =head1 Visualize
 
 Visualize a Silicon chip wiring diagrams
+
+=head2 svg ($D, %options)
+
+Draw the bus lines.
+
+     Parameter  Description
+  1  $D         Wiring diagram
+  2  %options   Options
+
+B<Example:>
+
+
+  if (1)                                                                          
+   {my $d = new;
+    $d->wire(x=>1, y=>1, X=>1, Y=>3);
+    $d->wire(x=>1, y=>2, X=>1, Y=>4);
+  
+    $d->svg(file=>"overY1");  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+   }
+  
 
 
 =head1 Hash Definitions
@@ -355,14 +379,6 @@ Confirm we can lay a wire in Y
   1  $D         Drawing
   2  $W         Wire
 
-=head2 svg ($D, %options)
-
-Draw the bus lines.
-
-     Parameter  Description
-  1  $D         Wiring diagram
-  2  %options   Options
-
 
 =head1 Index
 
@@ -371,11 +387,11 @@ Draw the bus lines.
 
 2 L<canLayY|/canLayY> - Confirm we can lay a wire in Y
 
-3 L<new|/new> - New wiring diagram
+3 L<new|/new> - New wiring diagram.
 
 4 L<svg|/svg> - Draw the bus lines.
 
-5 L<wire|/wire> - New wire on wiring diagram
+5 L<wire|/wire> - New wire on a wiring diagram.
 
 =head1 Installation
 
@@ -399,6 +415,8 @@ under the same terms as Perl itself.
 
 =cut
 
+
+
 goto finish if caller;
 clearFolder(q(svg), 99);                                                        # Clear the output svg folder
 my $start = time;
@@ -415,7 +433,7 @@ if (1)
   $d->svg(file=>"overX1");
  }
 
-if (1)
+if (1)                                                                          #Tsvg
  {my $d = new;
   $d->wire(x=>1, y=>1, X=>1, Y=>3);
   $d->wire(x=>1, y=>2, X=>1, Y=>4);
