@@ -197,7 +197,7 @@ sub svg($%)                                                                     
 
   for my $w($D->wires->@*)                                                      # Show start and end points of each wire
    {my ($x, $y, $X, $Y, $d, $l) = @$w{qw(x y X Y d l)};
-    next if defined($L) &&  $L != $l;                               # Must occupy space in this dimension and optionally be on the specified level
+    next if defined($L) &&  $L != $l;                                           # Must occupy space in this dimension and optionally be on the specified level
     $svg->rect(x=>$x+1/4, y=>$y+1/4, width=>1/2, height=>1/2, fill=>"green",  opacity=>1);
     $svg->rect(x=>$X+1/4, y=>$Y+1/4, width=>1/2, height=>1/2, fill=>"yellow", opacity=>1);
    }
