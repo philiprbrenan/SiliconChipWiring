@@ -174,18 +174,18 @@ sub svgLevel($%)                                                                
     next if $x == $X or defined($L) &&  $L != $l;                               # Must occupy space in this dimension and optionally be on the specified level
     if ($d)
      {if ($x > $X)
-       {$svg->line(x1=>$X,   y1=>$Y+1/2, x2=>$x+1, y2=>$Y+1/2, stroke=>$xs);
+       {$svg->line(x1=>$X+1/2,   y1=>$Y+1/2, x2=>$x+1/2, y2=>$Y+1/2, stroke=>$xs);
        }
       else
-       {$svg->line(x1=>$x,   y1=>$Y+1/2, x2=>$X+1, y2=>$Y+1/2, stroke=>$xs);
+       {$svg->line(x1=>$x+1/2,   y1=>$Y+1/2, x2=>$X+1/2, y2=>$Y+1/2, stroke=>$xs);
        }
      }
     else
      {if ($x > $X)
-       {$svg->line(x1=>$X,   y1=>$y+1/2, x2=>$x+1, y2=>$y+1/2, stroke=>$xs);
+       {$svg->line(x1=>$X+1/2,   y1=>$y+1/2, x2=>$x+1/2, y2=>$y+1/2, stroke=>$xs);
        }
       else
-       {$svg->line(x1=>$x,   y1=>$y+1/2, x2=>$X+1, y2=>$y+1/2, stroke=>$xs);
+       {$svg->line(x1=>$x+1/2,   y1=>$y+1/2, x2=>$X+1/2, y2=>$y+1/2, stroke=>$xs);
        }
      }
    }
@@ -195,18 +195,18 @@ sub svgLevel($%)                                                                
     next if $y == $Y or defined($L) &&  $L != $l;                               # Must occupy space in this dimension and optionally be on the specified level
     if ($d)
      {if ($y < $Y)
-       {$svg->line(x1=>$x+1/2, y1=>$y,   x2=>$x+1/2, y2=>$Y+1,   stroke=>$ys);
+       {$svg->line(x1=>$x+1/2, y1=>$y+1/2,   x2=>$x+1/2, y2=>$Y+1/2,   stroke=>$ys);
        }
      elsif ($y > $Y)                                                            # Avoid drawing Y wires of length 1
-       {$svg->line(x1=>$x+1/2, y1=>$Y,   x2=>$x+1/2, y2=>$y+1,   stroke=>$ys);
+       {$svg->line(x1=>$x+1/2, y1=>$Y+1/2,   x2=>$x+1/2, y2=>$y+1/2,   stroke=>$ys);
        }
      }
     else
      {if ($y > $Y)
-       {$svg->line(x1=>$X+1/2, y1=>$y+1, x2=>$X+1/2, y2=>$Y,     stroke=>$ys);
+       {$svg->line(x1=>$X+1/2, y1=>$y+1/2,   x2=>$X+1/2, y2=>$Y+1/2,   stroke=>$ys);
        }
       elsif ($y < $Y)                                                           # Avoid drawing Y wires of length 1
-       {$svg->line(x1=>$X+1/2, y1=>$y,   x2=>$X+1/2, y2=>$Y+1,   stroke=>$ys);
+       {$svg->line(x1=>$X+1/2, y1=>$y+1/2,   x2=>$X+1/2, y2=>$Y+1/2,   stroke=>$ys);
        }
      }
    }
