@@ -46,7 +46,7 @@ sub wire($%)                                                                    
     y => $y,                                                                    # Start y position of wire
     Y => $Y,                                                                    # End   y position of wire
     d => $d,                                                                    # The direction to draw first, x: 0, y:1
-    l => $l,                                                                     # Level
+    l => $l,                                                                    # Level
    );
 
   return undef unless $D->canLayX($w) and $D->canLayY($w);                      # Confirm we can lay the wire
@@ -141,13 +141,29 @@ sub canLayY($$)                                                                 
 
 #D1 Visualize                                                                   # Visualize a Silicon chip wiring diagrams
 
-sub svg($%)                                                                     # Draw the bus lines.
+sub svg($%)                                                                     # Draw the bus lines by level.
  {my ($D, %options) = @_;                                                       # Wiring diagram, options
-  my $L = $options{level};                                                      # Option level:  draw the specified level else draw all levels
+  if (defined($options{level}))                                                 # Draw the specified level
+   {$D->svgLevel(%options);
+   }
+  else                                                                          # Draw all levels
+   {my $L = $D->levels;
+    my $F = $options{file} // '';                                               # File to write to  minus extension of svg
+    my @s;
+    for my $l(1..$L)
+     {push @s, $D->svgLevel(%options, level=>$l, $F ? (file=>"${F}_$l") : ());  # Write each level into a separate file
+     }
+    @s
+   }
+ }
+
+sub svgLevel($%)                                                                # Draw the bus lines by level.
+ {my ($D, %options) = @_;                                                       # Wiring diagram, options
+  defined(my $L = $options{level}) or confess "level";                          # Draw the specified level
 
   my @defaults = (defaults=>                                                    # Default values
-   {stroke_width => 1,
-    opacity      =>0.75,
+   {stroke_width => 0.5,
+    opacity      => 0.75,
    });
 
   my $xs = "darkRed"; my $ys = "darkBlue";                                      # x,y colors
@@ -536,9 +552,7 @@ if (1)                                                                          
   my  $d = new;
   ok  $d->wire2(x=>$_, y=>1, X=>1+$_, Y=>1+$_) for 1..$N;
   $d->svg(file=>"layers");
-  my $L = $d->levels;
-  is_deeply $L, 2;
-  $d->svg(file=>"layers$_", level=>$_) for 1..$L;
+  is_deeply $d->levels, 2;
  }
 
 &done_testing;
