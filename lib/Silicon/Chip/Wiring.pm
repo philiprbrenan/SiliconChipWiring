@@ -80,7 +80,7 @@ sub startAtSamePoint($$$)                                                       
   $l == $L and $x == $X and $y == $Y                                            # True if they start at the same point
  }
 
-sub freeBoard($%)                                                               # The free space in +X, -X, +Y, -Y given a point in a level in the diagram
+sub freeBoard($%)                                                               # The free space in +X, -X, +Y, -Y given a point in a level in the diagram. The lowest low limit is zero, while an upper limit of L<undef> implies unbounded.
  {my ($D, %options) = @_;                                                       # Drawing, options
   my ($x, $y, $l) = @options{qw(x y l)};
 
