@@ -84,7 +84,7 @@ sub freeBoard($%)                                                               
  {my ($D, %options) = @_;                                                       # Drawing, options
   my ($x, $y, $l) = @options{qw(x y l)};
 
-  my $mx; my $Mx; my $my; my $My;
+  my $mx = 0; my $Mx; my $my = 0; my $My;
 
   for my $w($D->wires->@*)                                                      # Each wire
    {my ($xx, $yy, $XX, $YY, $dd, $ll) = @$w{qw(x y X Y d l)};
@@ -543,7 +543,6 @@ eval {goto latest};
 
 my sub  ok($)        {!$_[0] and confess; &ok( $_[0])}
 my sub nok($)        {&ok(!$_[0])}
-my sub is_deeply($$) {&is_deeply(@_)}
 
 # Tests
 
@@ -553,7 +552,7 @@ if (1)
   nok $d->wire(x=>2, y=>1, X=>5, Y=>5);                                         # X overlaps and does not start at the same point
    ok $d->wire(x=>1, y=>1, X=>7, Y=>7);
       $d->svg(file=>"overX1");
-   is_deeply $d->levels, 1;
+   is_deeply($d->levels, 1);
  }
 
 if (1)
@@ -613,7 +612,7 @@ if (1)                                                                          
   my  $d = new;
   ok  $d->wire2(x=>$_, y=>1, X=>1+$_, Y=>1+$_) for 1..$N;
   $d->svg(file=>"layers");
-  is_deeply $d->levels, 2;
+  is_deeply($d->levels, 2);
  }
 
 #latest:;
@@ -625,9 +624,9 @@ if (1)                                                                          
    ok $d->wire(x=>70, y=>50, X=>50, Y=>70);
       $d->svg(file=>"freeBoardX");
 
-   is_deeply([$d->freeBoard(x=>33, y=>30, l=>1)], [30, 50, undef, undef]);
-   is_deeply([$d->freeBoard(x=>30, y=>47, l=>1)], [undef, undef, 30, 50]);
-   is_deeply([$d->freeBoard(x=>40, y=>40, l=>1)], [undef, undef, undef, undef]);
+   is_deeply([$d->freeBoard(x=>33, y=>30, l=>1)], [30, 50,     0, undef]);
+   is_deeply([$d->freeBoard(x=>30, y=>47, l=>1)], [0,  undef, 30, 50]);
+   is_deeply([$d->freeBoard(x=>40, y=>40, l=>1)], [0,  undef,  0, undef]);
  }
 
 #latest:;
@@ -639,10 +638,10 @@ if (1)                                                                          
    ok $d->wire(x=>70, y=>50, X=>50, Y=>70, d=>1);
       $d->svg(file=>"freeBoardY");
 
-    is_deeply([$d->freeBoard(x=>33, y=>10, l=>1)], [30, 50, undef, undef]);
-    is_deeply([$d->freeBoard(x=>5,  y=>10, l=>1)], [undef, 10, undef, undef]);
-    is_deeply([$d->freeBoard(x=>75, y=>10, l=>1)], [70, undef, undef, undef]);
-    is_deeply([$d->freeBoard(x=>40, y=>40, l=>1)], [undef, undef, undef, undef]);
+    is_deeply([$d->freeBoard(x=>33, y=>10, l=>1)], [30,    50, 0, undef]);
+    is_deeply([$d->freeBoard(x=>5,  y=>10, l=>1)], [ 0,    10, 0, undef]);
+    is_deeply([$d->freeBoard(x=>75, y=>10, l=>1)], [70, undef, 0, undef]);
+    is_deeply([$d->freeBoard(x=>40, y=>40, l=>1)], [ 0, undef, 0, undef]);
  }
 
 &done_testing;
