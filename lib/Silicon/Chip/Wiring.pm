@@ -80,6 +80,67 @@ sub startAtSamePoint($$$)                                                       
   $l == $L and $x == $X and $y == $Y                                            # True if they start at the same point
  }
 
+sub freeBoard($%)                                                               # The free space in +X, -X, +Y, -Y given a point in a level in the diagram
+ {my ($D, %options) = @_;                                                       # Drawing, options
+  my ($x, $y, $l) = @options{qw(x y l)};
+
+  my $mx; my $Mx; my $my; my $My;
+
+  for my $w($D->wires->@*)                                                      # Each wire
+   {my ($xx, $yy, $XX, $YY, $dd, $ll) = @$w{qw(x y X Y d l)};
+    next if $l != $ll;                                                          # Same level
+    if ($dd == 0)                                                               # X first
+     {if ($yy == $y)                                                            # Same y
+       {if ($xx == $XX && $x == $xx or $xx < $XX && $x >= $xx && $x <= $XX or $xx > $XX && $x >= $xx && $x <= $XX)                       # Overlap with this wire in X
+         {$mx = $Mx = 0;                                                        # X is first and we are inside
+         }
+        elsif ($x < $xx)                                                        # The x range is above
+         {$Mx = min($xx, $XX, defined($Mx) ? $Mx : $xx);                        # Smallest element of range above
+         }
+        elsif ($x > $xx)                                                        # The x range is below
+         {$mx = max($xx, $XX, defined($mx) ? $mx : $xx);                        # Largest element of range below
+         }
+       }
+      if ($XX == $x)                                                            # Same x
+       {if ($yy == $YY && $y == $yy or $yy < $YY && $y >= $yy && $y <= $YY or $yy > $YY && $y >= $yy && $y <= $YY)                       # Overlap with this wire in Y
+         {$my = $My = 0;                                                        # Y is first and we are inside
+         }
+        elsif ($y < $yy)                                                        # The y range is above
+         {$My = min($yy, $YY, defined($My) ? $My : $yy);                        # Smallest element of range above
+         }
+        elsif ($y > $yy)                                                        # The y range is below
+         {$my = max($yy, $YY, defined($my) ? $my : $yy);                        # Largest element of range below
+         }
+       }
+     }
+    else                                                                        # Y first
+     {if ($xx == $x)                                                            # Same y
+       {if ($yy == $YY && $y == $yy or $yy < $YY && $y >= $yy && $y <= $YY or $yy > $YY && $y >= $yy && $y <= $YY)                       # Overlap with this wire in Y
+         {$my = $My = 0;                                                        # Y is first and we are inside
+         }
+        elsif ($y < $yy)                                                        # The y range is above
+         {$My = min($yy, $YY, defined($My) ? $My : $yy);                        # Smallest element of range above
+         }
+        elsif ($y > $yy)                                                        # The y range is below
+         {$my = may($yy, $YY, defined($my) ? $my : $yy);                        # Largest element of range below
+         }
+       }
+      if ($YY == $y)                                                            # Same x
+       {if ($xx == $XX && $x == $xx or $xx < $XX && $x >= $xx && $x <= $XX or $xx > $XX && $x >= $xx && $x <= $XX)                       # Overlap with this wire in X
+         {$mx = $Mx = 0;                                                        # X is first and we are inside
+         }
+        elsif ($x < $xx)                                                        # The x range is above
+         {$Mx = min($xx, $XX, defined($Mx) ? $Mx : $xx);                        # Smallest element of range above
+         }
+        elsif ($x > $xx)                                                        # The x range is below
+         {$mx = max($xx, $XX, defined($mx) ? $mx : $xx);                        # Largest element of range below
+         }
+       }
+     }
+   }
+  ($mx, $Mx, $my, $My)                                                                             # Did not overlay any existing X segment
+ }
+
 sub canLayX($$)                                                                 #P Confirm we can lay a wire in X with out overlaying an existing wire.
  {my ($D, $W) = @_;                                                             # Drawing, wire
   my ($x, $y, $X, $Y, $d, $l)         = @$W{qw(x y X Y d l)};
@@ -203,7 +264,7 @@ sub svgLevel($%)                                                                
      }
     else
      {if ($y > $Y)
-       {$svg->line(x1=>$X+1/2, y1=>$Y+1/4,   x2=>$X+1/2, y2=>$y+3/4,     stroke=>$ys);
+       {$svg->line(x1=>$X+1/2, y1=>$Y+1/4,   x2=>$X+1/2, y2=>$y+3/4,   stroke=>$ys);
        }
       elsif ($y < $Y)                                                           # Avoid drawing Y wires of length 1
        {$svg->line(x1=>$X+1/2, y1=>$y+1/4,   x2=>$X+1/2, y2=>$Y+3/4,   stroke=>$ys);
@@ -553,6 +614,35 @@ if (1)                                                                          
   ok  $d->wire2(x=>$_, y=>1, X=>1+$_, Y=>1+$_) for 1..$N;
   $d->svg(file=>"layers");
   is_deeply $d->levels, 2;
+ }
+
+#latest:;
+if (1)                                                                          #TfreeBoard
+ {my  $d = new;
+   ok $d->wire(x=>10, y=>30, X=>30, Y=>10);
+   ok $d->wire(x=>70, y=>30, X=>50, Y=>10);
+   ok $d->wire(x=>10, y=>50, X=>30, Y=>70);
+   ok $d->wire(x=>70, y=>50, X=>50, Y=>70);
+      $d->svg(file=>"freeBoardX");
+
+   is_deeply([$d->freeBoard(x=>33, y=>30, l=>1)], [30, 50, undef, undef]);
+   is_deeply([$d->freeBoard(x=>30, y=>47, l=>1)], [undef, undef, 30, 50]);
+   is_deeply([$d->freeBoard(x=>40, y=>40, l=>1)], [undef, undef, undef, undef]);
+ }
+
+#latest:;
+if (1)                                                                          #TfreeBoard
+ {my  $d = new;
+   ok $d->wire(x=>10, y=>30, X=>30, Y=>10, d=>1);
+   ok $d->wire(x=>70, y=>30, X=>50, Y=>10, d=>1);
+   ok $d->wire(x=>10, y=>50, X=>30, Y=>70, d=>1);
+   ok $d->wire(x=>70, y=>50, X=>50, Y=>70, d=>1);
+      $d->svg(file=>"freeBoardY");
+
+    is_deeply([$d->freeBoard(x=>33, y=>10, l=>1)], [30, 50, undef, undef]);
+    is_deeply([$d->freeBoard(x=>5,  y=>10, l=>1)], [undef, 10, undef, undef]);
+    is_deeply([$d->freeBoard(x=>75, y=>10, l=>1)], [70, undef, undef, undef]);
+    is_deeply([$d->freeBoard(x=>40, y=>40, l=>1)], [undef, undef, undef, undef]);
  }
 
 &done_testing;
