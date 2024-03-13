@@ -60,7 +60,7 @@ sub levels($%)                                                                  
   max(map {$_->l} $D->wires->@*) // 0;                                          # Largest level is the number of levels
  }
 
-sub overlays($$$$)                                                              # Check whether two segments overlay each other
+sub overlays($$$$)                                                              #P Check whether two segments overlay each other
  {my ($a, $b, $x, $y) = @_;                                                     # Start of first segment, end of first segment, start of second segment, end of second segment
   ($a, $b) = ($b, $a) if $a > $b;
   ($x, $y) = ($y, $x) if $x > $y;
@@ -666,6 +666,7 @@ if (1)                                                                          
    ok $d->wire(x=>3, y=>0, X=>2, Y=>2, d=>1);
   nok $d->wire(x=>4, y=>0, X=>3, Y=>2, d=>1);
       $d->svg(file=>"ll2");
+  is_deeply($d->levels, 1);
  }
 
 &done_testing;
