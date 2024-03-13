@@ -60,6 +60,13 @@ sub levels($%)                                                                  
   max(map {$_->l} $D->wires->@*) // 0;                                          # Largest level is the number of levels
  }
 
+sub overlays($$$$)                                                              # Check whether two segments overlay each other
+ {my ($a, $b, $x, $y) = @_;                                                     # Start of first segment, end of first segment, start of second segment, end of second segment
+  ($a, $b) = ($b, $a) if $a > $b;
+  ($x, $y) = ($y, $x) if $x > $y;
+   $a <= $y and $b >= $x;
+ }
+
 sub wire2($%)                                                                   # Try connecting two points by going along X first if that fails along Y first to see if a connection can in fact be made. Try at each level until we find the first level that we can make the connection at or create a new level to ensure that the connection is made.
  {my ($D, %options) = @_;                                                       # Diagram, options
 
@@ -138,7 +145,7 @@ sub freeBoard($%)                                                               
        }
      }
    }
-  ($mx, $Mx, $my, $My)                                                                             # Did not overlay any existing X segment
+  ($mx, $Mx, $my, $My)                                                          # Did not overlay any existing X segment
  }
 
 sub canLayX($$)                                                                 #P Confirm we can lay a wire in X with out overlaying an existing wire.
@@ -148,7 +155,8 @@ sub canLayX($$)                                                                 
   for my $w($D->wires->@*)                                                      # Each wire
    {my ($xx, $yy, $XX, $YY, $dd, $ll) = @$w{qw(x y X Y d l)};
     next if $l != $ll or $D->startAtSamePoint($W, $w);                          # One output pin can drive many input pins, but each input pin can be driven by only one output pin
-    if ($x >= $xx && $x <= $XX or $X >= $xx && $X <= $XX)                       # Overlap with this wire in X
+
+    if (overlays($x, $X, $xx, $XX))                                             # Possibly overlap with this wire in X
      {if ($d == 0 and $dd == 0)
        {return 0 if $y == $yy;
         next;
@@ -177,8 +185,7 @@ sub canLayY($$)                                                                 
   for my $w($D->wires->@*)                                                      # Each wire
    {my ($xx, $yy, $XX, $YY, $dd, $ll) = @$w{qw(x y X Y d l)};
     next if $l != $ll or $D->startAtSamePoint($W, $w);                          # One output pin can drive many input pins, but each input pin can be driven by only one output pin
-    if ($y >= $yy && $y <= $YY or $y >= $YY && $y <= $yy or                     # Overlap with this wire in Y
-        $Y >= $yy && $y <= $YY or $Y >= $YY && $Y <= $yy)
+    if (overlays($y, $Y, $yy, $YY))                                             # Possibly overlap with this wire in X
      {if ($d == 0 and $dd == 0)
        {return 0 if $X == $XX;
         next;
@@ -642,6 +649,23 @@ if (1)                                                                          
     is_deeply([$d->freeBoard(x=>5,  y=>10, l=>1)], [ 0,    10, 0, undef]);
     is_deeply([$d->freeBoard(x=>75, y=>10, l=>1)], [70, undef, 0, undef]);
     is_deeply([$d->freeBoard(x=>40, y=>40, l=>1)], [ 0, undef, 0, undef]);
+ }
+
+#latest:;
+if (1)
+ {nok overlays(4, 8, 2, 3);
+   ok overlays(4, 8, 2, 4);
+   ok overlays(4, 8, 2, 10);
+   ok overlays(4, 8, 6, 10);
+  nok overlays(4, 8, 9, 10);
+ }
+
+#latest:;
+if (1)                                                                          # overlay via wire
+ {my  $d = new;
+   ok $d->wire(x=>3, y=>0, X=>2, Y=>2, d=>1);
+  nok $d->wire(x=>4, y=>0, X=>3, Y=>2, d=>1);
+      $d->svg(file=>"ll2");
  }
 
 &done_testing;
