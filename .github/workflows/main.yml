@@ -1,4 +1,4 @@
-# Test 2024-03-14 at 02:22:00
+# Test 2024-03-14 at 02:22:53
 
 name: Test
 
@@ -25,6 +25,11 @@ jobs:
         repository: philiprbrenan/SvgSimple
         path: svg
 
+    - uses: actions/checkout@v3
+      with:
+        repository: philiprbrenan/MathIntersectionCirleLine
+        path: micl
+
     - name: Install Tree
       run:
         sudo apt install tree
@@ -35,9 +40,7 @@ jobs:
 
     - name: Cpan
       run:  sudo cpan install -T Data::Dump
-    - name: Ubuntu update
-      run:  sudo apt update
 
     - name: Test Silicon Wiring
       run:
-        perl -Idtt/lib -Isvg/lib  lib/Silicon/Chip/Wiring.pm
+        perl -Idtt/lib -Isvg/lib -Imicl/lib  lib/Silicon/Chip/Wiring.pm
