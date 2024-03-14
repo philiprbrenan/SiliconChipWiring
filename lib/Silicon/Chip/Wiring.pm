@@ -1,4 +1,4 @@
-#!/usr/bin/perl -I/home/phil/perl/cpan/DataTableText/lib/ -I/home/phil/perl/cpan/SvgSimple/lib/
+#!/usr/bin/perl -I/home/phil/perl/cpan/DataTableText/lib/ -I/home/phil/perl/cpan/SvgSimple/lib/  -I/home/phil/perl/cpan/Math-Intersection-Circle-Line/lib
 #-------------------------------------------------------------------------------
 # Wiring up a silicon chip to transform software into hardware.
 # Philip R Brenan at appaapps dot com, Appa Apps Ltd Inc., 2024
