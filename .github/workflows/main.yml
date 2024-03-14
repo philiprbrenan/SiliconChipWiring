@@ -1,4 +1,4 @@
-# Test 2024-03-14 at 02:22:53
+# Test 2024-03-14 at 02:25:13
 
 name: Test
 
@@ -27,7 +27,7 @@ jobs:
 
     - uses: actions/checkout@v3
       with:
-        repository: philiprbrenan/MathIntersectionCirleLine
+        repository: philiprbrenan/MathIntersectionCircleLine
         path: micl
 
     - name: Install Tree
