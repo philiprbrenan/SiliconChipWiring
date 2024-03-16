@@ -37,8 +37,8 @@ sub wire($%)                                                                    
   defined($X) or confess "X";
   defined($Y) or confess "Y";
   $x == $X and $y == $Y and confess "Start and end of connection are in the same cell";
-  $d //= 0;
-  $l ||= 1;
+  $d //= 0;                                                                     # Direction 0 - x  first, 1 - y first
+  $l ||= 1;                                                                     # Level
 
   my $w = genHash(__PACKAGE__,                                                  # Wire
     x => $x,                                                                    # Start x position of wire
@@ -49,10 +49,15 @@ sub wire($%)                                                                    
     l => $l,                                                                    # Level
    );
 
-  return undef unless $D->canLayX($w) and $D->canLayY($w);                      # Confirm we can lay the wire
+  return undef unless $D->canLay($w);                                           # Confirm we can lay the wire
+  return $w if defined $options{noplace};                                       # Do not place the wore on the diagram
   push $D->wires->@*, $w;                                                       # Append wire to diagram
-
   $w
+ }
+
+sub numberOfWires($%)                                                           # Number of wires in the diagram
+ {my ($D, %options) = @_;                                                       # Diagram, options
+  scalar $D->wires->@*
  }
 
 sub levels($%)                                                                  # Number of levels in the diagram
@@ -80,11 +85,96 @@ sub wire2($%)                                                                   
    }
  }
 
+sub wire3c($%)                                                                  # Connect two points by moving out from the source to B<s> and from the target to B<t> and then connect source to B<s> to B<t>  to target.
+ {my ($D, %options) = @_;                                                       # Diagram, options
+  my ($px, $py, $pX, $pY) = @options{qw(x y X Y)};                              # Points to connect
+  my $N = $options{spread} // 4;                                                # How far we should spread out from the source and target in search of a better connection
+  $px == $pX and $py == $pY and confess "Source == target";                     # Confirm that we are trying to connect separate points
+
+  my $C;                                                                        # The cost of the shortest connecting C wire
+  my $levels = $D->levels;                                                      # Levels
+
+  for my $l(1..$levels)                                                         # Each level
+   {for my $d(0..1)                                                             # Check for a direct connection at this level
+     {if (my $w = $D->wire(x=>$px, y=>$py, X=>$pX, Y=>$pY, l=>$l, d=>$d, noplace=>1)) # Can we reach the source jump point from the source?
+       {my $c = $D->length($w);                                                 # Cost of the connection
+        $C = [$c, $w] if !defined($C) or $c < $$C[0];                           # Check for lower cost connections
+        say STDERR "BBBB ", dump();
+       }
+     }
+
+    my $sx1 = max 0, $px - $N;                                                  # Source jump point search start in x
+    my $sy1 = max 0, $py - $N;                                                  # Source jump point search start in y
+    my $sx2 =        $px + $N;                                                  # Source jump point search end   in x
+    my $sy2 =        $py + $N;                                                  # Source jump point search end   in y
+
+    for     my $sx($sx1..$sx2)                                                  # Source jump placements in x
+     {for   my $sy($sy1..$sy2)                                                  # Source jump placements in y
+       {for my $d(0..1)                                                         # Direction
+         {next if $sx == $px and $sy == $py;                                    # Avoid using the source or target as the jump point
+          next if $sx == $pX and $sy == $pY;
+          my $sw = $D->wire(x=>$px, y=>$py, X=>$sx, Y=>$sy, l=>$l, d=>$d, noplace=>1); # Can we reach the source jump point from the source?
+          next unless defined $sw;
+
+          my $tx1 = max 0, $pX - $N;                                            # Target jump point search start in x
+          my $ty1 = max 0, $pY - $N;                                            # Target jump point search start in y
+          my $tx2 =        $pX + $N;                                            # Target jump point search end   in x
+          my $ty2 =        $pY + $N;                                            # Target jump point search end   in y
+          for     my $tx($tx1..$tx2)                                            # Target jump placements in x
+           {for   my $ty($ty1..$ty2)                                            # Target jump placements in y
+             {for my $d(0..1)                                                   # Direction
+               {next if $tx == $px and $ty == $py;                              # Avoid using the source or target as the jump point
+                next if $tx == $pX and $ty == $pY;
+                my $tw = $D->wire (x=>$tx, y=>$ty, X=>$pX, Y=>$pY, l=>$l, d=>$d, noplace=>1); # Can we reach the target jump point from the target
+                next unless defined $tw;
+
+                if ($sx == $tx and $sy == $ty)                                  # Identical jump points
+                 {my $c = $D->length($sw) + $D->length($tw);                    # Cost of this connection
+                  say STDERR "CCCCs ", $D->printWire($sw);
+                  say STDERR "CCCCt ", $D->printWire($tw);
+                  $C = [$c, $sw, $tw] if !defined($C) or $c < $$C[0];           # Check for lower cost connections
+                 }
+                else                                                            # Differing jump points
+                 {for my $d(0..1)                                               # Direction
+                   {if (my $stw = $D->wire(x=>$sx, y=>$sy, X=>$tx, Y=>$ty, l=>$l, d=>$d, noplace=>1)) # Can we reach the target jump point from the source jump point
+                     {my $c = $D->length($sw) + $D->length($tw) + $D->length($stw); # Cost of this connection including the vertical connections
+                      say STDERR "DDDDs ", $D->printWire($sw);
+                      say STDERR "DDDD  ", $D->printWire($stw);
+                      say STDERR "DDDDt ", $D->printWire($tw);
+                      $C = [$c, $sw, $stw, $tw] if !defined($C) or $c < $$C[0]; # Check for lower cost connections
+                     }
+                   }
+                 }
+               }
+             }
+           }
+         }
+       }
+     }
+   }
+  return $C if defined $options{noplace};                                       # Do not place the wore on the diagram
+  return $D->wire(%options, l=>$levels+1) unless defined $C;                    # No connection possible on any existing level, so start a new level and connect there
+  if ($C)                                                                       # Create the wires
+   {my @C = @$C; shift @C;
+    $D->wire(%$_) for @C
+   }
+  $C
+ }
+
 sub startAtSamePoint($$$)                                                       # Whether two wires start at the same point on the same level.
  {my ($D, $a, $b) = @_;                                                         # Drawing, wire, wire
   my ($x, $y, $l) = @$a{qw(x y l)};
   my ($X, $Y, $L) = @$b{qw(x y l)};
   $l == $L and $x == $X and $y == $Y                                            # True if they start at the same point
+ }
+
+sub length($$)                                                                  # Length of a wire including the vertical connections
+ {my ($D, $w) = @_;                                                             # Drawing, wire
+  my ($x, $y, $X, $Y) = @$w{qw(x y X Y)};
+  my $dx = abs($X - $x); my $dy = abs($Y - $y);
+  return 1 + $dx unless $dy;
+  return 1 + $dy unless $dx;
+  2 + $dx + $dy
  }
 
 sub freeBoard($%)                                                               # The free space in +X, -X, +Y, -Y given a point in a level in the diagram. The lowest low limit is zero, while an upper limit of L<undef> implies unbounded.
@@ -148,6 +238,11 @@ sub freeBoard($%)                                                               
   ($mx, $Mx, $my, $My)                                                          # Did not overlay any existing X segment
  }
 
+sub canLay($$)                                                                  #P Confirm we can lay a wire in X and Y with out overlaying an existing wire.
+ {my ($d, $w) = @_;                                                             # Drawing, wire
+  $d->canLayX($w) and $d->canLayY($w);                                          # Confirm we can lay the wire
+ }
+
 sub canLayX($$)                                                                 #P Confirm we can lay a wire in X with out overlaying an existing wire.
  {my ($D, $W) = @_;                                                             # Drawing, wire
   my ($x, $y, $X, $Y, $d, $l)         = @$W{qw(x y X Y d l)};
@@ -208,6 +303,12 @@ sub canLayY($$)                                                                 
  }
 
 #D1 Visualize                                                                   # Visualize a Silicon chip wiring diagrams
+
+sub printWire($$)                                                               # Print a wire to a string
+ {my ($D, $W) = @_;                                                             # Drawing, wire
+  my ($x, $y, $X, $Y, $d, $l) = @$W{qw(x y X Y d l)};
+  sprintf "%4d,%4d   %4d,%4d  %2d  %d", $x, $y, $X, $Y, $l, $d
+ }
 
 sub svg($%)                                                                     # Draw the bus lines by level.
  {my ($D, %options) = @_;                                                       # Wiring diagram, options
@@ -289,7 +390,7 @@ sub svgLevel($%)                                                                
   my $t = $svg->print;                                                          # Text of svg
 
   if (my $f = $options{file})                                                   # Optionally write to an svg file
-   {owf(fpe(q(svg), $f, q(svg)), $t)
+   {owf(fpe($f, q(svg)), $t)
    }
 
   $t
@@ -558,7 +659,7 @@ if (1)
    ok $d->wire(x=>1, y=>1, X=>3, Y=>3);
   nok $d->wire(x=>2, y=>1, X=>5, Y=>5);                                         # X overlaps and does not start at the same point
    ok $d->wire(x=>1, y=>1, X=>7, Y=>7);
-      $d->svg(file=>"overX1");
+      $d->svg(file=>"svg/overX1");
    is_deeply($d->levels, 1);
  }
 
@@ -567,7 +668,7 @@ if (1)
    ok $d->wire(x=>1, y=>1, X=>3, Y=>5);                                         # First
    ok $d->wire(x=>2, y=>3, X=>4, Y=>5);
   nok $d->wire(x=>2, y=>3, X=>3, Y=>7);                                         # Y overlaps first but did not start at the same point as first
-      $d->svg(file=>"overX2");
+      $d->svg(file=>"svg/overX2");
  }
 
 if (1)                                                                          #Tsvg
@@ -575,7 +676,7 @@ if (1)                                                                          
    ok $d->wire(x=>1, y=>1, X=>3, Y=>3, d=>1);
   nok $d->wire(x=>1, y=>2, X=>5, Y=>7, d=>1);                                   # Overlaps previous wire but does not start at the same point
    ok $d->wire(x=>1, y=>1, X=>7, Y=>7, d=>1);
-      $d->svg(file=>"overY1");
+      $d->svg(file=>"svg/overY1");
  }
 
 if (1)                                                                          #TstartAtSamePoint
@@ -586,7 +687,7 @@ if (1)                                                                          
    ok (my $e = $d->wire(x=>3, y=>2, X=>7, Y=>4, d=>1));
   nok $d->startAtSamePoint($b, $a);
    ok $d->startAtSamePoint($b, $e);
-      $d->svg(file=>"overY2");
+      $d->svg(file=>"svg/overY2");
  }
 
 if (1)                                                                          #Twire #Tnew
@@ -602,7 +703,7 @@ if (1)                                                                          
    ok $d->wire(x=>7, y=>13, X=>5, Y=>15, d=>1);
 
   nok $d->wire(x=>1, y=>8, X=>2, Y=>10,  d=>1);
-      $d->svg(file=>"square");
+      $d->svg(file=>"svg/square");
  }
 
 if (1)                                                                          #Twire2
@@ -610,7 +711,7 @@ if (1)                                                                          
    ok $d->wire (x=>1, y=>1, X=>3, Y=>3);
    ok $d->wire2(x=>1, y=>3, X=>3, Y=>5);
 
-      $d->svg(file=>"wire2");
+      $d->svg(file=>"svg/wire2");
  }
 
 #latest:;
@@ -618,7 +719,7 @@ if (1)                                                                          
  {my $N = 3;
   my  $d = new;
   ok  $d->wire2(x=>$_, y=>1, X=>1+$_, Y=>1+$_) for 1..$N;
-  $d->svg(file=>"layers");
+  $d->svg(file=>"svg/layers");
   is_deeply($d->levels, 2);
  }
 
@@ -629,7 +730,7 @@ if (1)                                                                          
    ok $d->wire(x=>70, y=>30, X=>50, Y=>10);
    ok $d->wire(x=>10, y=>50, X=>30, Y=>70);
    ok $d->wire(x=>70, y=>50, X=>50, Y=>70);
-      $d->svg(file=>"freeBoardX");
+      $d->svg(file=>"svg/freeBoardX");
 
    is_deeply([$d->freeBoard(x=>33, y=>30, l=>1)], [30, 50,     0, undef]);
    is_deeply([$d->freeBoard(x=>30, y=>47, l=>1)], [0,  undef, 30, 50]);
@@ -643,7 +744,7 @@ if (1)                                                                          
    ok $d->wire(x=>70, y=>30, X=>50, Y=>10, d=>1);
    ok $d->wire(x=>10, y=>50, X=>30, Y=>70, d=>1);
    ok $d->wire(x=>70, y=>50, X=>50, Y=>70, d=>1);
-      $d->svg(file=>"freeBoardY");
+      $d->svg(file=>"svg/freeBoardY");
 
     is_deeply([$d->freeBoard(x=>33, y=>10, l=>1)], [30,    50, 0, undef]);
     is_deeply([$d->freeBoard(x=>5,  y=>10, l=>1)], [ 0,    10, 0, undef]);
@@ -665,8 +766,45 @@ if (1)                                                                          
  {my  $d = new;
    ok $d->wire(x=>3, y=>0, X=>2, Y=>2, d=>1);
   nok $d->wire(x=>4, y=>0, X=>3, Y=>2, d=>1);
-      $d->svg(file=>"ll2");
+      $d->svg(file=>"svg/ll2");
   is_deeply($d->levels, 1);
+ }
+
+#latest:;
+if (1)                                                                          #Tlength #TnumberOfWires
+ {my  $d = new;
+  my $w = $d->wire(x=>1, y=>1, X=>2, Y=>3);
+  is_deeply($d->length($w), 3);
+  is_deeply($d->numberOfWires, 1);
+  nok $d->wire(x=>2, y=>1, X=>2, Y=>3);
+  is_deeply($d->numberOfWires, 1);
+ }
+
+latest:;
+if (1)                                                                          #Twire2c
+ {my  $d = new;
+  $d->wire(x=>3, y=>4, X=>4, Y=>4);
+  $d->wire(x=>3, y=>5, X=>4, Y=>5);
+  $d->wire(x=>3, y=>6, X=>4, Y=>6);
+  $d->wire(x=>3, y=>7, X=>4, Y=>7);
+  $d->wire(x=>3, y=>8, X=>4, Y=>8);
+  my $c = $d->wire3c(x=>1, y=>6, X=>6, Y=>7, spread=>2);
+  say STDERR "AAAA ", dump($c);
+  $d->svg(file=>"svg/aaa");
+  exit;
+ }
+
+latest:;
+if (1)                                                                          #Twire2c
+ {my  $d = new;
+  $d->wire(x=>3, y=>4, X=>4, Y=>4);
+  $d->wire(x=>3, y=>5, X=>4, Y=>5);
+  $d->wire(x=>3, y=>6, X=>4, Y=>6);
+  $d->wire(x=>3, y=>7, X=>4, Y=>7);
+  $d->wire(x=>3, y=>8, X=>4, Y=>8);
+  is_deeply($d->numberOfWires, 5);
+  my $c = $d->wire3c(x=>1, y=>6, X=>6, Y=>7, spread=>1);
+  $d->svg(file=>"svg/around");
  }
 
 &done_testing;
