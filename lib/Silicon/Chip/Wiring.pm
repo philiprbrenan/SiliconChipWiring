@@ -15,7 +15,7 @@ use Svg::Simple;
 
 makeDieConfess;
 
-my $debug = 1;                                                                  # Debug if set
+my $debug = 0;                                                                  # Debug if set
 sub debugMask {1}                                                               # Adds a grid to the drawing of a bus line
 
 #D1 Construct                                                                   # Create a Silicon chip wiring diagram on one or more levels as necessary to make the connections requested.
@@ -49,8 +49,8 @@ sub wire($%)                                                                    
     l => $l,                                                                    # Level
    );
 
-  return undef unless $D->canLay($w);                                           # Confirm we can lay the wire
-  return $w if defined $options{noplace};                                       # Do not place the wore on the diagram
+  return undef unless $options{force} or $D->canLay($w);                        # Confirm we can lay the wire unless we are using force
+  return $w if defined $options{noplace};                                       # Do not place the wire on the diagram
   push $D->wires->@*, $w;                                                       # Append wire to diagram
   $w
  }
@@ -92,14 +92,18 @@ sub wire3c($%)                                                                  
   $px == $pX and $py == $pY and confess "Source == target";                     # Confirm that we are trying to connect separate points
 
   my $C;                                                                        # The cost of the shortest connecting C wire
+  my sub minCost(@)                                                             # Check for lower cost connections
+   {my (@w) = @_;                                                               # Wires
+    my $c = 0; $c += $D->length($_) for @w;                                     # Sum costs
+    $C = [$c, @w] if !defined($C) or $c < $$C[0];                               # Lower cost connection?
+   }
+
   my $levels = $D->levels;                                                      # Levels
 
   for my $l(1..$levels)                                                         # Each level
    {for my $d(0..1)                                                             # Check for a direct connection at this level
      {if (my $w = $D->wire(x=>$px, y=>$py, X=>$pX, Y=>$pY, l=>$l, d=>$d, noplace=>1)) # Can we reach the source jump point from the source?
-       {my $c = $D->length($w);                                                 # Cost of the connection
-        $C = [$c, $w] if !defined($C) or $c < $$C[0];                           # Check for lower cost connections
-        say STDERR "BBBB ", dump();
+       {minCost($w);                                                            # Cost of the connection
        }
      }
 
@@ -130,18 +134,21 @@ sub wire3c($%)                                                                  
 
                 if ($sx == $tx and $sy == $ty)                                  # Identical jump points
                  {my $c = $D->length($sw) + $D->length($tw);                    # Cost of this connection
-                  say STDERR "CCCCs ", $D->printWire($sw);
-                  say STDERR "CCCCt ", $D->printWire($tw);
-                  $C = [$c, $sw, $tw] if !defined($C) or $c < $$C[0];           # Check for lower cost connections
+                  minCost($sw, $tw);                                            # Lower cost?
+                 }
+                elsif (my $Sw = $D->wire(x=>$px, y=>$py, X=>$tx, Y=>$ty, l=>$l, d=>$d, noplace=>1)) # Can we reach the target jump point directly from the source
+                 {my $c = $D->length($Sw) + $D->length($tw);                    # Cost of this connection
+                  minCost($Sw, $tw);                                            # Lower cost?
+                 }
+                elsif (my $Tw = $D->wire(x=>$sx, y=>$sy, X=>$pX, Y=>$pY, l=>$l, d=>$d, noplace=>1)) # Can we reach the target  directly from the source jump point
+                 {my $c = $D->length($sw) + $D->length($Tw);                    # Cost of this connection
+                  minCost($sw, $Tw);                                            # Lower cost?
                  }
                 else                                                            # Differing jump points
                  {for my $d(0..1)                                               # Direction
                    {if (my $stw = $D->wire(x=>$sx, y=>$sy, X=>$tx, Y=>$ty, l=>$l, d=>$d, noplace=>1)) # Can we reach the target jump point from the source jump point
                      {my $c = $D->length($sw) + $D->length($tw) + $D->length($stw); # Cost of this connection including the vertical connections
-                      say STDERR "DDDDs ", $D->printWire($sw);
-                      say STDERR "DDDD  ", $D->printWire($stw);
-                      say STDERR "DDDDt ", $D->printWire($tw);
-                      $C = [$c, $sw, $stw, $tw] if !defined($C) or $c < $$C[0]; # Check for lower cost connections
+                      minCost($sw, $stw, $tw);                                  # Lower cost?
                      }
                    }
                  }
@@ -152,11 +159,15 @@ sub wire3c($%)                                                                  
        }
      }
    }
-  return $C if defined $options{noplace};                                       # Do not place the wore on the diagram
+  return $C if defined $options{noplace};                                       # Do not place the wire on the diagram
   return $D->wire(%options, l=>$levels+1) unless defined $C;                    # No connection possible on any existing level, so start a new level and connect there
   if ($C)                                                                       # Create the wires
    {my @C = @$C; shift @C;
-    $D->wire(%$_) for @C
+    for my $i(keys @C)
+     {my $c = $C[$i];
+      $debug = $i == 1;
+      my $w = $D->wire(%$c, force=>1);                                          # Otherwise the central wire might not connect to the other wires
+     }
    }
   $C
  }
@@ -306,7 +317,7 @@ sub canLayY($$)                                                                 
 
 sub printWire($$)                                                               # Print a wire to a string
  {my ($D, $W) = @_;                                                             # Drawing, wire
-  my ($x, $y, $X, $Y, $d, $l) = @$W{qw(x y X Y d l)};
+  my ($x, $y, $X, $Y, $l, $d) = @$W{qw(x y X Y l d)};
   sprintf "%4d,%4d   %4d,%4d  %2d  %d", $x, $y, $X, $Y, $l, $d
  }
 
@@ -789,9 +800,12 @@ if (1)                                                                          
   $d->wire(x=>3, y=>7, X=>4, Y=>7);
   $d->wire(x=>3, y=>8, X=>4, Y=>8);
   my $c = $d->wire3c(x=>1, y=>6, X=>6, Y=>7, spread=>2);
-  say STDERR "AAAA ", dump($c);
+  is_deeply($c, [13,
+    bless({ d => 1, l => 1, x => 1, X => 6, Y => 9, y => 6 }, "Silicon::Chip::Wiring"),
+    bless({ d => 1, l => 1, x => 6, X => 6, y => 9, Y => 7 }, "Silicon::Chip::Wiring"),
+  ]);
+
   $d->svg(file=>"svg/aaa");
-  exit;
  }
 
 latest:;
