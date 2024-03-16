@@ -785,14 +785,21 @@ if (1)                                                                          
 if (1)                                                                          #Tlength #TnumberOfWires
  {my  $d = new;
   my $w = $d->wire(x=>1, y=>1, X=>2, Y=>3);
-  is_deeply($d->length($w), 3);
+  is_deeply($d->length($w), 5);
   is_deeply($d->numberOfWires, 1);
   nok $d->wire(x=>2, y=>1, X=>2, Y=>3);
   is_deeply($d->numberOfWires, 1);
  }
 
-latest:;
-if (1)                                                                          #Twire2c
+#latest:;
+if (1)                                                                          #TprintWire
+ {my  $d = new;
+  my $w = $d->wire(x=>3, y=>4, X=>4, Y=>4);
+  is_deeply($w, {d =>0, l=>1, x=>3, X=>4, Y=>4, y=>4});
+ }
+
+#latest:;
+if (1)                                                                          #Twire3c
  {my  $d = new;
   $d->wire(x=>3, y=>4, X=>4, Y=>4);
   $d->wire(x=>3, y=>5, X=>4, Y=>5);
@@ -808,7 +815,7 @@ if (1)                                                                          
   $d->svg(file=>"svg/aaa");
  }
 
-latest:;
+#latest:;
 if (1)                                                                          #Twire2c
  {my  $d = new;
   $d->wire(x=>3, y=>4, X=>4, Y=>4);
