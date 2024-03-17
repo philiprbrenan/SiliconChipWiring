@@ -8,13 +8,13 @@ Silicon::Chip::Wiring - Wire up a [silicon](https://en.wikipedia.org/wiki/Silico
 
 # Synopsis
 
-Wire up a silicon chip:
+## Wire up a silicon chip
 
 <div>
     <p><img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/square.svg">
 </div>
 
-Automatic wiring around obstacles:
+## Automatic wiring around obstacles
 
 <div>
     <p><img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/wire3c_n_1.svg">
