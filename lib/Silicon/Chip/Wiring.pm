@@ -439,7 +439,11 @@ Silicon::Chip::Wiring - Wire up a L<silicon|https://en.wikipedia.org/wiki/Silico
 
 =head1 Synopsis
 
+Wire up a silicon chip:
+
 =for html <p><img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/square.svg">
+
+=for html <p><img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/wire3c_n_1.svg">
 
 =head1 Description
 
@@ -456,7 +460,7 @@ module.  For an alphabetic listing of all methods by name see L<Index|/Index>.
 
 =head1 Construct
 
-Create a Silicon chip wiring diagrams
+Create a Silicon chip wiring diagram on one or more levels as necessary to make the connections requested.
 
 =head2 new (%options)
 
@@ -468,24 +472,34 @@ New wiring diagram.
 B<Example:>
 
 
-  if (1)
+  if (1)                                                                           
+  
+   {my  $d = new;  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-   {my $d = new;  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
-
-    $d->wire(x=>1, y=>3, X=>3, Y=>1);
-    $d->wire(x=>7, y=>3, X=>5, Y=>1);
-    $d->wire(x=>1, y=>5, X=>3, Y=>7);
-    $d->wire(x=>7, y=>5, X=>5, Y=>7);
-
-    $d->wire(x=>1, y=>11, X=>3, Y=>9,  d=>1);
-    $d->wire(x=>7, y=>11, X=>5, Y=>9,  d=>1);
-    $d->wire(x=>1, y=>13, X=>3, Y=>15, d=>1);
-    $d->wire(x=>7, y=>13, X=>5, Y=>15, d=>1);
-
-    ok(!$d->wire(x=>1, y=>8, X=>2, Y=>10,  d=>1));
-    $d->svg(file=>"square");
+     ok $d->wire(x=>1, y=>3, X=>3, Y=>1);
+     ok $d->wire(x=>7, y=>3, X=>5, Y=>1);
+     ok $d->wire(x=>1, y=>5, X=>3, Y=>7);
+     ok $d->wire(x=>7, y=>5, X=>5, Y=>7);
+  
+     ok $d->wire(x=>1, y=>11, X=>3, Y=>9,  d=>1);
+     ok $d->wire(x=>7, y=>11, X=>5, Y=>9,  d=>1);
+     ok $d->wire(x=>1, y=>13, X=>3, Y=>15, d=>1);
+     ok $d->wire(x=>7, y=>13, X=>5, Y=>15, d=>1);
+  
+    nok $d->wire(x=>1, y=>8, X=>2, Y=>10,  d=>1);
+        $d->svg(file=>"svg/square");
    }
+  
+  if (1)                                                                           
+   {my $N = 3;
+  
+    my  $d = new;  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
+    ok  $d->wire2(x=>$_, y=>1, X=>1+$_, Y=>1+$_) for 1..$N;
+    $d->svg(file=>"svg/layers");
+    is_deeply($d->levels, 2);
+   }
+  
 
 =head2 wire($D, %options)
 
@@ -498,48 +512,297 @@ New wire on a wiring diagram.
 B<Example:>
 
 
-  if (1)
-   {my $d = new;
+  if (1)                                                                           
+   {my  $d = new;
+  
+     ok $d->wire(x=>1, y=>3, X=>3, Y=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-    $d->wire(x=>1, y=>3, X=>3, Y=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+  
+     ok $d->wire(x=>7, y=>3, X=>5, Y=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
+  
+     ok $d->wire(x=>1, y=>5, X=>3, Y=>7);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-    $d->wire(x=>7, y=>3, X=>5, Y=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+  
+     ok $d->wire(x=>7, y=>5, X=>5, Y=>7);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
+  
+  
+     ok $d->wire(x=>1, y=>11, X=>3, Y=>9,  d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-    $d->wire(x=>1, y=>5, X=>3, Y=>7);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+  
+     ok $d->wire(x=>7, y=>11, X=>5, Y=>9,  d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
+  
+     ok $d->wire(x=>1, y=>13, X=>3, Y=>15, d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-    $d->wire(x=>7, y=>5, X=>5, Y=>7);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+  
+     ok $d->wire(x=>7, y=>13, X=>5, Y=>15, d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
+  
+  
+    nok $d->wire(x=>1, y=>8, X=>2, Y=>10,  d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
-    $d->wire(x=>1, y=>11, X=>3, Y=>9,  d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
-
-
-    $d->wire(x=>7, y=>11, X=>5, Y=>9,  d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
-
-
-    $d->wire(x=>1, y=>13, X=>3, Y=>15, d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
-
-
-    $d->wire(x=>7, y=>13, X=>5, Y=>15, d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
-
-
-
-    ok(!$d->wire(x=>1, y=>8, X=>2, Y=>10,  d=>1));  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
-
-    $d->svg(file=>"square");
+        $d->svg(file=>"svg/square");
    }
+  
+  if (1)                                                                           
+   {my $N = 3;
+    my  $d = new;
+    ok  $d->wire2(x=>$_, y=>1, X=>1+$_, Y=>1+$_) for 1..$N;
+    $d->svg(file=>"svg/layers");
+    is_deeply($d->levels, 2);
+   }
+  
 
+=head2 numberOfWires   ($D, %options)
+
+Number of wires in the diagram
+
+     Parameter  Description
+  1  $D         Diagram
+  2  %options   Options
+
+B<Example:>
+
+
+  if (1)                                                                           
+   {my  $d = new;
+    my $w = $d->wire(x=>1, y=>1, X=>2, Y=>3);
+    is_deeply($d->length($w), 5);
+  
+    is_deeply($d->numberOfWires, 1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+    nok $d->wire(x=>2, y=>1, X=>2, Y=>3);
+  
+    is_deeply($d->numberOfWires, 1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+   }
+  
+
+=head2 levels  ($D, %options)
+
+Number of levels in the diagram
+
+     Parameter  Description
+  1  $D         Diagram
+  2  %options   Options
+
+B<Example:>
+
+
+   {my  $d = new;                                                                 
+  
+
+=head2 wire2   ($D, %options)
+
+Try connecting two points by going along X first if that fails along Y first to see if a connection can in fact be made. Try at each level until we find the first level that we can make the connection at or create a new level to ensure that the connection is made.
+
+     Parameter  Description
+  1  $D         Diagram
+  2  %options   Options
+
+B<Example:>
+
+
+  if (1)                                                                          
+   {my  $d = new;
+     ok $d->wire (x=>1, y=>1, X=>3, Y=>3);
+  
+     ok $d->wire2(x=>1, y=>3, X=>3, Y=>5);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+  
+  
+        $d->svg(file=>"svg/wire2");  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+   }
+  
+
+=head2 wire3c  ($D, %options)
+
+Connect two points by moving out from the source to B<s> and from the target to B<t> and then connect source to B<s> to B<t>  to target.
+
+     Parameter  Description
+  1  $D         Diagram
+  2  %options   Options
+
+B<Example:>
+
+
+  if (1)                                                                          
+   {my  $d = new;
+    $d->wire(x=>3, y=>4, X=>4, Y=>4);
+    $d->wire(x=>3, y=>5, X=>4, Y=>5);
+    $d->wire(x=>3, y=>6, X=>4, Y=>6);
+    $d->wire(x=>3, y=>7, X=>4, Y=>7);
+    $d->wire(x=>3, y=>8, X=>4, Y=>8);
+  
+    my $c = $d->wire3c(x=>1, y=>6, X=>6, Y=>7);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+    is_deeply($c, [13,
+      { d => 1, l => 1, x => 1, X => 6, Y => 9, y => 6 },
+      { d => 1, l => 1, x => 6, X => 6, y => 9, Y => 7 },
+    ]);
+  
+    $d->svg(file=>"svg/wire3c_u");
+   }
+  
+  if (1)                                                                          
+   {my  $d = new;
+    $d->wire(x=>2, y=>2, X=>3, Y=>2);
+    $d->wire(x=>2, y=>3, X=>3, Y=>3);
+    $d->wire(x=>8, y=>2, X=>9, Y=>2);
+    $d->wire(x=>8, y=>3, X=>9, Y=>3);
+  
+    $d->wire(x=>5, y=>4, X=>6, Y=>4);
+  
+    $d->wire(x=>2, y=>5, X=>3, Y=>5);
+    $d->wire(x=>2, y=>6, X=>3, Y=>6);
+    $d->wire(x=>8, y=>5, X=>9, Y=>5);
+    $d->wire(x=>8, y=>6, X=>9, Y=>6);
+  
+  
+    my $c = $d->wire3c(x=>2, y=>4, X=>8, Y=>4);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+    is_deeply($c, [13,
+       { d => 0, l => 1, X => 4, x => 2, Y => 3, y => 4 },
+       { d => 0, l => 1, x => 4, X => 7, y => 3, Y => 3 },
+       { d => 1, l => 1, X => 8, x => 7, y => 3, Y => 4 },
+    ]);
+  
+    $d->svg(file=>"svg/wire3c_n");
+   }
+  
+
+=head2 startAtSamePoint($D, $a, $b)
+
+Whether two wires start at the same point on the same level.
+
+     Parameter  Description
+  1  $D         Drawing
+  2  $a         Wire
+  3  $b         Wire
+
+B<Example:>
+
+
+  if (1)                                                                          
+   {my  $d = new;
+     ok (my $a = $d->wire(x=>1, y=>1, X=>5, Y=>3, d=>1));                         # First
+     ok (my $b = $d->wire(x=>3, y=>2, X=>5, Y=>4, d=>1));
+    nok (my $c = $d->wire(x=>3, y=>2, X=>7, Y=>3, d=>1));                         # X overlaps first but did not start at the same point as first
+     ok (my $e = $d->wire(x=>3, y=>2, X=>7, Y=>4, d=>1));
+  
+    nok $d->startAtSamePoint($b, $a);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+  
+     ok $d->startAtSamePoint($b, $e);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+        $d->svg(file=>"svg/overY2");
+   }
+  
+
+=head2 length  ($D, $w)
+
+Length of a wire including the vertical connections
+
+     Parameter  Description
+  1  $D         Drawing
+  2  $w         Wire
+
+B<Example:>
+
+
+  if (1)                                                                           
+   {my  $d = new;
+    my $w = $d->wire(x=>1, y=>1, X=>2, Y=>3);
+  
+    is_deeply($d->length($w), 5);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+    is_deeply($d->numberOfWires, 1);
+    nok $d->wire(x=>2, y=>1, X=>2, Y=>3);
+    is_deeply($d->numberOfWires, 1);
+   }
+  
+
+=head2 freeBoard   ($D, %options)
+
+The free space in +X, -X, +Y, -Y given a point in a level in the diagram. The lowest low limit is zero, while an upper limit of L<undef|https://perldoc.perl.org/functions/undef.html> implies unbounded.
+
+     Parameter  Description
+  1  $D         Drawing
+  2  %options   Options
+
+B<Example:>
+
+
+  if (1)                                                                          
+   {my  $d = new;
+     ok $d->wire(x=>10, y=>30, X=>30, Y=>10);
+     ok $d->wire(x=>70, y=>30, X=>50, Y=>10);
+     ok $d->wire(x=>10, y=>50, X=>30, Y=>70);
+     ok $d->wire(x=>70, y=>50, X=>50, Y=>70);
+        $d->svg(file=>"svg/freeBoardX");
+  
+  
+     is_deeply([$d->freeBoard(x=>33, y=>30, l=>1)], [30, 50,     0, undef]);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+  
+     is_deeply([$d->freeBoard(x=>30, y=>47, l=>1)], [0,  undef, 30, 50]);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+  
+     is_deeply([$d->freeBoard(x=>40, y=>40, l=>1)], [0,  undef,  0, undef]);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+   }
+  
+  if (1)                                                                          
+   {my  $d = new;
+     ok $d->wire(x=>10, y=>30, X=>30, Y=>10, d=>1);
+     ok $d->wire(x=>70, y=>30, X=>50, Y=>10, d=>1);
+     ok $d->wire(x=>10, y=>50, X=>30, Y=>70, d=>1);
+     ok $d->wire(x=>70, y=>50, X=>50, Y=>70, d=>1);
+        $d->svg(file=>"svg/freeBoardY");
+  
+  
+      is_deeply([$d->freeBoard(x=>33, y=>10, l=>1)], [30,    50, 0, undef]);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+  
+      is_deeply([$d->freeBoard(x=>5,  y=>10, l=>1)], [ 0,    10, 0, undef]);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+  
+      is_deeply([$d->freeBoard(x=>75, y=>10, l=>1)], [70, undef, 0, undef]);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+  
+      is_deeply([$d->freeBoard(x=>40, y=>40, l=>1)], [ 0, undef, 0, undef]);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+
+   }
+  
 
 =head1 Visualize
 
 Visualize a Silicon chip wiring diagrams
 
+=head2 printWire   ($D, $W)
+
+Print a wire to a string
+
+     Parameter  Description
+  1  $D         Drawing
+  2  $W         Wire
+
+B<Example:>
+
+
+  if (1)                                                                          
+   {my  $d = new;
+    my $w = $d->wire(x=>3, y=>4, X=>4, Y=>4);
+    is_deeply($w, {d =>0, l=>1, x=>3, X=>4, Y=>4, y=>4});
+   }
+  
+
 =head2 svg ($D, %options)
 
-Draw the bus lines.
+Draw the bus lines by level.
 
      Parameter  Description
   1  $D         Wiring diagram
@@ -548,15 +811,16 @@ Draw the bus lines.
 B<Example:>
 
 
-  if (1)
-   {my $d = new;
-    $d->wire(x=>1, y=>1, X=>1, Y=>3);
-    $d->wire(x=>1, y=>2, X=>1, Y=>4);
-
-    $d->svg(file=>"overY1");  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+  if (1)                                                                          
+   {my  $d = new;
+     ok $d->wire(x=>1, y=>1, X=>3, Y=>3, d=>1);
+    nok $d->wire(x=>1, y=>2, X=>5, Y=>7, d=>1);                                   # Overlaps previous wire but does not start at the same point
+     ok $d->wire(x=>1, y=>1, X=>7, Y=>7, d=>1);
+  
+        $d->svg(file=>"svg/overY1");  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
    }
-
+  
 
 
 =head1 Hash Definitions
@@ -587,6 +851,10 @@ End   y position of wire
 
 The direction to draw first, x: 0, y:1
 
+=head4 l
+
+Level
+
 =head4 wires
 
 Wires on diagram
@@ -603,35 +871,86 @@ Start y position of wire
 
 =head1 Private Methods
 
-=head2 canLayX ($D, $W)
+=head2 overlays($a, $b, $x, $y)
 
-Confirm we can lay a wire in X
+Check whether two segments overlay each other
+
+     Parameter  Description
+  1  $a         Start of first segment
+  2  $b         End of first segment
+  3  $x         Start of second segment
+  4  $y         End of second segment
+
+=head2 canLay  ($d, $w, %options)
+
+Confirm we can lay a wire in X and Y with out overlaying an existing wire.
+
+     Parameter  Description
+  1  $d         Drawing
+  2  $w         Wire
+  3  %options   Options
+
+=head2 canLayX ($D, $W, %options)
+
+Confirm we can lay a wire in X with out overlaying an existing wire.
 
      Parameter  Description
   1  $D         Drawing
   2  $W         Wire
+  3  %options   Options
 
-=head2 canLayY ($D, $W)
+=head2 canLayY ($D, $W, %options)
 
-Confirm we can lay a wire in Y
+Confirm we can lay a wire in Y with out overlaying an existing wire.
 
      Parameter  Description
   1  $D         Drawing
   2  $W         Wire
+  3  %options   Options
+
+=head2 svgLevel($D, %options)
+
+Draw the bus lines by level.
+
+     Parameter  Description
+  1  $D         Wiring diagram
+  2  %options   Options
 
 
 =head1 Index
 
 
-1 L<canLayX|/canLayX> - Confirm we can lay a wire in X
+1 L<canLay|/canLay> - Confirm we can lay a wire in X and Y with out overlaying an existing wire.
 
-2 L<canLayY|/canLayY> - Confirm we can lay a wire in Y
+2 L<canLayX|/canLayX> - Confirm we can lay a wire in X with out overlaying an existing wire.
 
-3 L<new|/new> - New wiring diagram.
+3 L<canLayY|/canLayY> - Confirm we can lay a wire in Y with out overlaying an existing wire.
 
-4 L<svg|/svg> - Draw the bus lines.
+4 L<freeBoard|/freeBoard> - The free space in +X, -X, +Y, -Y given a point in a level in the diagram.
 
-5 L<wire|/wire> - New wire on a wiring diagram.
+5 L<length|/length> - Length of a wire including the vertical connections
+
+6 L<levels|/levels> - Number of levels in the diagram
+
+7 L<new|/new> - New wiring diagram.
+
+8 L<numberOfWires|/numberOfWires> - Number of wires in the diagram
+
+9 L<overlays|/overlays> - Check whether two segments overlay each other
+
+10 L<printWire|/printWire> - Print a wire to a string
+
+11 L<startAtSamePoint|/startAtSamePoint> - Whether two wires start at the same point on the same level.
+
+12 L<svg|/svg> - Draw the bus lines by level.
+
+13 L<svgLevel|/svgLevel> - Draw the bus lines by level.
+
+14 L<wire|/wire> - New wire on a wiring diagram.
+
+15 L<wire2|/wire2> - Try connecting two points by going along X first if that fails along Y first to see if a connection can in fact be made.
+
+16 L<wire3c|/wire3c> - Connect two points by moving out from the source to B<s> and from the target to B<t> and then connect source to B<s> to B<t>  to target.
 
 =head1 Installation
 
@@ -644,7 +963,7 @@ comprehend, use, modify and install via B<cpan>:
 
 L<philiprbrenan@gmail.com|mailto:philiprbrenan@gmail.com>
 
-L<http://www.appaapps.com|http://www.appaapps.com>
+L<http://prb.appaapps.com|http://prb.appaapps.com>
 
 =head1 Copyright
 
@@ -654,6 +973,8 @@ This module is free software. It may be used, redistributed and/or modified
 under the same terms as Perl itself.
 
 =cut
+
+
 
 goto finish if caller;
 clearFolder(q(svg), 99);                                                        # Clear the output svg folder
