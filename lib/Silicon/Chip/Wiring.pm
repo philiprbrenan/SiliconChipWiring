@@ -439,12 +439,12 @@ Silicon::Chip::Wiring - Wire up a L<silicon|https://en.wikipedia.org/wiki/Silico
 
 =head1 Synopsis
 
-Wire up a silicon chip:
+=head2 Wire up a silicon chip
 
 =for html <p><img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/square.svg">
 
 
-Automatic wiring around obstacles:
+=head2 Automatic wiring around obstacles
 
 =for html <p><img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/wire3c_n_1.svg">
 
