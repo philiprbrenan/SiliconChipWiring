@@ -3,12 +3,12 @@
 <svg height="100%" viewBox="0 0 8.75 8.75" width="100%" background-color="none" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 
 <line opacity="0.75" stroke="darkRed" stroke-width="0.5" x1="1.25" x2="3.75" y1="1.5" y2="1.5"/>
-<line opacity="0.75" stroke="darkRed" stroke-width="0.5" x1="1.25" x2="7.75" y1="1.5" y2="1.5"/>
+<line opacity="0.75" stroke="darkRed" stroke-width="0.5" x1="1.25" x2="7.75" y1="2.5" y2="2.5"/>
 <line opacity="0.75" stroke="darkBlue" stroke-width="0.5" x1="3.5" x2="3.5" y1="1.25" y2="3.75"/>
-<line opacity="0.75" stroke="darkBlue" stroke-width="0.5" x1="7.5" x2="7.5" y1="1.25" y2="7.75"/>
+<line opacity="0.75" stroke="darkBlue" stroke-width="0.5" x1="7.5" x2="7.5" y1="2.25" y2="7.75"/>
 <rect fill="green" height="0.5" opacity="1" stroke-width="0.5" width="0.5" x="1.25" y="1.25"/>
 <rect fill="yellow" height="0.5" opacity="1" stroke-width="0.5" width="0.5" x="3.25" y="3.25"/>
-<rect fill="green" height="0.5" opacity="1" stroke-width="0.5" width="0.5" x="1.25" y="1.25"/>
+<rect fill="green" height="0.5" opacity="1" stroke-width="0.5" width="0.5" x="1.25" y="2.25"/>
 <rect fill="yellow" height="0.5" opacity="1" stroke-width="0.5" width="0.5" x="7.25" y="7.25"/>
 <line dominant-baseline="hanging" font-size="0.25" opacity="0.2" stroke="black" stroke-width="0.015625" text-anchor="start" x1="0" x2="0" y1="0" y2="8.75"/>
 <text dominant-baseline="hanging" fill="black" font-size="0.25" opacity="1" stroke="black" stroke-width="0.015625" text-anchor="start" x="0" y="0">0</text>
