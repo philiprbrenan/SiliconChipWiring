@@ -3,7 +3,6 @@
 # Wiring up a silicon chip to transform software into hardware.
 # Philip R Brenan at appaapps dot com, Appa Apps Ltd Inc., 2024
 #-------------------------------------------------------------------------------
-# Replace checkStart with a fanOut gate so that all pins have single connections leaving them.
 use v5.34;
 package Silicon::Chip::Wiring;
 our $VERSION = 20240308;
@@ -130,24 +129,24 @@ sub wire3c($%)                                                                  
              {for my $d(0..1)                                                   # Direction
                {next if $tx == $px and $ty == $py;                              # Avoid using the source or target as the jump point
                 next if $tx == $pX and $ty == $pY;
-                my $tw = $D->wire (x=>$tx, y=>$ty, X=>$pX, Y=>$pY, l=>$l, d=>$d, noplace=>1, checkStart=>1); # Can we reach the target jump point from the target
+                my $tw = $D->wire (x=>$tx, y=>$ty, X=>$pX, Y=>$pY, l=>$l, d=>$d, noplace=>1); # Can we reach the target jump point from the target
                 next unless defined $tw;
 
                 if ($sx == $tx and $sy == $ty)                                  # Identical jump points
                  {my $c = $D->length($sw) + $D->length($tw);                    # Cost of this connection
                   minCost($sw, $tw);                                            # Lower cost?
                  }
-                elsif (my $Sw = $D->wire(x=>$px, y=>$py, X=>$tx, Y=>$ty, l=>$l, d=>$d, noplace=>1, checkStart=>1)) # Can we reach the target jump point directly from the source
+                elsif (my $Sw = $D->wire(x=>$px, y=>$py, X=>$tx, Y=>$ty, l=>$l, d=>$d, noplace=>1)) # Can we reach the target jump point directly from the source
                  {my $c = $D->length($Sw) + $D->length($tw);                    # Cost of this connection
                   minCost($Sw, $tw);                                            # Lower cost?
                  }
-                elsif (my $Tw = $D->wire(x=>$sx, y=>$sy, X=>$pX, Y=>$pY, l=>$l, d=>$d, noplace=>1, checkStart=>1)) # Can we reach the target  directly from the source jump point
+                elsif (my $Tw = $D->wire(x=>$sx, y=>$sy, X=>$pX, Y=>$pY, l=>$l, d=>$d, noplace=>1)) # Can we reach the target  directly from the source jump point
                  {my $c = $D->length($sw) + $D->length($Tw);                    # Cost of this connection
                   minCost($sw, $Tw);                                            # Lower cost?
                  }
                 else                                                            # Differing jump points
                  {for my $d(0..1)                                               # Direction
-                   {if (my $stw = $D->wire(x=>$sx, y=>$sy, X=>$tx, Y=>$ty, l=>$l, d=>$d, noplace=>1, checkStart=>1)) # Can we reach the target jump point from the source jump point
+                   {if (my $stw = $D->wire(x=>$sx, y=>$sy, X=>$tx, Y=>$ty, l=>$l, d=>$d, noplace=>1)) # Can we reach the target jump point from the source jump point
                      {my $c = $D->length($sw) + $D->length($tw) + $D->length($stw); # Cost of this connection including the vertical connections
                       minCost($sw, $stw, $tw);                                  # Lower cost?
                      }
@@ -166,7 +165,7 @@ sub wire3c($%)                                                                  
    {my @C = @$C; shift @C;
     for my $i(keys @C)
      {my $c = $C[$i];
-      my $w = $D->wire(%$c, force=>1, checkStart=>$i == 1 ? 1 : 0);            # Otherwise the central wire might not connect to the other wires and it might inavertantly start on another wores start point.  Ine way r=tp resolvethis might be to add a fan ouytt capability so that thre is never ever more than one connection between a pair of pins which would prevent an output pin from ever driving more than one input pin.
+      my $w = $D->wire(%$c, force=>1);                                          # Otherwise the central wire might not connect to the other wires and it might inavertantly start on another wores start point.  Ine way r=tp resolvethis might be to add a fan ouytt capability so that thre is never ever more than one connection between a pair of pins which would prevent an output pin from ever driving more than one input pin.
      }
    }
   $C
@@ -186,6 +185,16 @@ sub length($$)                                                                  
   return 1 + $dx unless $dy;
   return 1 + $dy unless $dx;
   2 + $dx + $dy
+ }
+
+sub totalLength($%)                                                             # Total length of all the wires
+ {my ($D, %options) = @_;                                                       # Drawing, options
+
+  my $l = 0;
+  for my $w($D->wires->@*)                                                      # Each wire
+   {$l += $D->length($w);
+   }
+  $l
  }
 
 sub freeBoard($%)                                                               # The free space in +X, -X, +Y, -Y given a point in a level in the diagram. The lowest low limit is zero, while an upper limit of L<undef> implies unbounded.
@@ -261,7 +270,6 @@ sub canLayX($$%)                                                                
   for my $w($D->wires->@*)                                                      # Each wire
    {my ($xx, $yy, $XX, $YY, $dd, $ll) = @$w{qw(x y X Y d l)};
     next if $l != $ll;
-    next if !$options{checkStart} and $D->startAtSamePoint($W, $w);             # One output pin can drive many input pins, but each input pin can be driven by only one output pin. The fan out proposal would obviate this.
 
     if (overlays($x, $X, $xx, $XX))                                             # Possibly overlap with this wire in X
      {if ($d == 0 and $dd == 0)
@@ -292,7 +300,7 @@ sub canLayY($$%)                                                                
   for my $w($D->wires->@*)                                                      # Each wire
    {my ($xx, $yy, $XX, $YY, $dd, $ll) = @$w{qw(x y X Y d l)};
     next if $l != $ll;                                                          # One output pin can drive many input pins, but each input pin can be driven by only one output pin
-    next if !$options{checkStart} and $D->startAtSamePoint($W, $w);             # One output pin can drive many input pins, but each input pin can be driven by only one output pin. The fan out proposal would obviate this.
+
     if (overlays($y, $Y, $yy, $YY))                                             # Possibly overlap with this wire in X
      {if ($d == 0 and $dd == 0)
        {return 0 if $X == $XX;
@@ -475,34 +483,34 @@ New wiring diagram.
 B<Example:>
 
 
-  if (1)                                                                           
-  
+  if (1)
+
    {my  $d = new;  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
      ok $d->wire(x=>1, y=>3, X=>3, Y=>1);
      ok $d->wire(x=>7, y=>3, X=>5, Y=>1);
      ok $d->wire(x=>1, y=>5, X=>3, Y=>7);
      ok $d->wire(x=>7, y=>5, X=>5, Y=>7);
-  
+
      ok $d->wire(x=>1, y=>11, X=>3, Y=>9,  d=>1);
      ok $d->wire(x=>7, y=>11, X=>5, Y=>9,  d=>1);
      ok $d->wire(x=>1, y=>13, X=>3, Y=>15, d=>1);
      ok $d->wire(x=>7, y=>13, X=>5, Y=>15, d=>1);
-  
+
     nok $d->wire(x=>1, y=>8, X=>2, Y=>10,  d=>1);
         $d->svg(file=>"svg/square");
    }
-  
-  if (1)                                                                           
+
+  if (1)
    {my $N = 3;
-  
+
     my  $d = new;  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
     ok  $d->wire2(x=>$_, y=>1, X=>1+$_, Y=>1+$_) for 1..$N;
     $d->svg(file=>"svg/layers");
     is_deeply($d->levels, 2);
    }
-  
+
 
 =head2 wire($D, %options)
 
@@ -515,48 +523,48 @@ New wire on a wiring diagram.
 B<Example:>
 
 
-  if (1)                                                                           
+  if (1)
    {my  $d = new;
-  
+
      ok $d->wire(x=>1, y=>3, X=>3, Y=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-  
+
      ok $d->wire(x=>7, y=>3, X=>5, Y=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-  
+
      ok $d->wire(x=>1, y=>5, X=>3, Y=>7);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-  
+
      ok $d->wire(x=>7, y=>5, X=>5, Y=>7);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-  
-  
+
+
      ok $d->wire(x=>1, y=>11, X=>3, Y=>9,  d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-  
+
      ok $d->wire(x=>7, y=>11, X=>5, Y=>9,  d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-  
+
      ok $d->wire(x=>1, y=>13, X=>3, Y=>15, d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-  
+
      ok $d->wire(x=>7, y=>13, X=>5, Y=>15, d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-  
-  
+
+
     nok $d->wire(x=>1, y=>8, X=>2, Y=>10,  d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
         $d->svg(file=>"svg/square");
    }
-  
-  if (1)                                                                           
+
+  if (1)
    {my $N = 3;
     my  $d = new;
     ok  $d->wire2(x=>$_, y=>1, X=>1+$_, Y=>1+$_) for 1..$N;
     $d->svg(file=>"svg/layers");
     is_deeply($d->levels, 2);
    }
-  
+
 
 =head2 numberOfWires   ($D, %options)
 
@@ -569,19 +577,19 @@ Number of wires in the diagram
 B<Example:>
 
 
-  if (1)                                                                           
+  if (1)
    {my  $d = new;
     my $w = $d->wire(x=>1, y=>1, X=>2, Y=>3);
     is_deeply($d->length($w), 5);
-  
+
     is_deeply($d->numberOfWires, 1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
     nok $d->wire(x=>2, y=>1, X=>2, Y=>3);
-  
+
     is_deeply($d->numberOfWires, 1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
    }
-  
+
 
 =head2 levels  ($D, %options)
 
@@ -594,8 +602,8 @@ Number of levels in the diagram
 B<Example:>
 
 
-   {my  $d = new;                                                                 
-  
+   {my  $d = new;
+
 
 =head2 wire2   ($D, %options)
 
@@ -608,18 +616,18 @@ Try connecting two points by going along X first if that fails along Y first to 
 B<Example:>
 
 
-  if (1)                                                                          
+  if (1)
    {my  $d = new;
      ok $d->wire (x=>1, y=>1, X=>3, Y=>3);
-  
+
      ok $d->wire2(x=>1, y=>3, X=>3, Y=>5);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-  
-  
+
+
         $d->svg(file=>"svg/wire2");  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
    }
-  
+
 
 =head2 wire3c  ($D, %options)
 
@@ -632,39 +640,39 @@ Connect two points by moving out from the source to B<s> and from the target to 
 B<Example:>
 
 
-  if (1)                                                                          
+  if (1)
    {my  $d = new;
     $d->wire(x=>3, y=>4, X=>4, Y=>4);
     $d->wire(x=>3, y=>5, X=>4, Y=>5);
     $d->wire(x=>3, y=>6, X=>4, Y=>6);
     $d->wire(x=>3, y=>7, X=>4, Y=>7);
     $d->wire(x=>3, y=>8, X=>4, Y=>8);
-  
+
     my $c = $d->wire3c(x=>1, y=>6, X=>6, Y=>7);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
     is_deeply($c, [13,
       { d => 1, l => 1, x => 1, X => 6, Y => 9, y => 6 },
       { d => 1, l => 1, x => 6, X => 6, y => 9, Y => 7 },
     ]);
-  
+
     $d->svg(file=>"svg/wire3c_u");
    }
-  
-  if (1)                                                                          
+
+  if (1)
    {my  $d = new;
     $d->wire(x=>2, y=>2, X=>3, Y=>2);
     $d->wire(x=>2, y=>3, X=>3, Y=>3);
     $d->wire(x=>8, y=>2, X=>9, Y=>2);
     $d->wire(x=>8, y=>3, X=>9, Y=>3);
-  
+
     $d->wire(x=>5, y=>4, X=>6, Y=>4);
-  
+
     $d->wire(x=>2, y=>5, X=>3, Y=>5);
     $d->wire(x=>2, y=>6, X=>3, Y=>6);
     $d->wire(x=>8, y=>5, X=>9, Y=>5);
     $d->wire(x=>8, y=>6, X=>9, Y=>6);
-  
-  
+
+
     my $c = $d->wire3c(x=>2, y=>4, X=>8, Y=>4);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
     is_deeply($c, [13,
@@ -672,10 +680,10 @@ B<Example:>
        { d => 0, l => 1, x => 4, X => 7, y => 3, Y => 3 },
        { d => 1, l => 1, X => 8, x => 7, y => 3, Y => 4 },
     ]);
-  
+
     $d->svg(file=>"svg/wire3c_n");
    }
-  
+
 
 =head2 startAtSamePoint($D, $a, $b)
 
@@ -689,21 +697,21 @@ Whether two wires start at the same point on the same level.
 B<Example:>
 
 
-  if (1)                                                                          
+  if (1)
    {my  $d = new;
      ok (my $a = $d->wire(x=>1, y=>1, X=>5, Y=>3, d=>1));                         # First
      ok (my $b = $d->wire(x=>3, y=>2, X=>5, Y=>4, d=>1));
     nok (my $c = $d->wire(x=>3, y=>2, X=>7, Y=>3, d=>1));                         # X overlaps first but did not start at the same point as first
      ok (my $e = $d->wire(x=>3, y=>2, X=>7, Y=>4, d=>1));
-  
+
     nok $d->startAtSamePoint($b, $a);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-  
+
      ok $d->startAtSamePoint($b, $e);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
         $d->svg(file=>"svg/overY2");
    }
-  
+
 
 =head2 length  ($D, $w)
 
@@ -716,17 +724,17 @@ Length of a wire including the vertical connections
 B<Example:>
 
 
-  if (1)                                                                           
+  if (1)
    {my  $d = new;
     my $w = $d->wire(x=>1, y=>1, X=>2, Y=>3);
-  
+
     is_deeply($d->length($w), 5);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
     is_deeply($d->numberOfWires, 1);
     nok $d->wire(x=>2, y=>1, X=>2, Y=>3);
     is_deeply($d->numberOfWires, 1);
    }
-  
+
 
 =head2 freeBoard   ($D, %options)
 
@@ -739,47 +747,47 @@ The free space in +X, -X, +Y, -Y given a point in a level in the diagram. The lo
 B<Example:>
 
 
-  if (1)                                                                          
+  if (1)
    {my  $d = new;
      ok $d->wire(x=>10, y=>30, X=>30, Y=>10);
      ok $d->wire(x=>70, y=>30, X=>50, Y=>10);
      ok $d->wire(x=>10, y=>50, X=>30, Y=>70);
      ok $d->wire(x=>70, y=>50, X=>50, Y=>70);
         $d->svg(file=>"svg/freeBoardX");
-  
-  
+
+
      is_deeply([$d->freeBoard(x=>33, y=>30, l=>1)], [30, 50,     0, undef]);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-  
+
      is_deeply([$d->freeBoard(x=>30, y=>47, l=>1)], [0,  undef, 30, 50]);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-  
+
      is_deeply([$d->freeBoard(x=>40, y=>40, l=>1)], [0,  undef,  0, undef]);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
    }
-  
-  if (1)                                                                          
+
+  if (1)
    {my  $d = new;
      ok $d->wire(x=>10, y=>30, X=>30, Y=>10, d=>1);
      ok $d->wire(x=>70, y=>30, X=>50, Y=>10, d=>1);
      ok $d->wire(x=>10, y=>50, X=>30, Y=>70, d=>1);
      ok $d->wire(x=>70, y=>50, X=>50, Y=>70, d=>1);
         $d->svg(file=>"svg/freeBoardY");
-  
-  
+
+
       is_deeply([$d->freeBoard(x=>33, y=>10, l=>1)], [30,    50, 0, undef]);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-  
+
       is_deeply([$d->freeBoard(x=>5,  y=>10, l=>1)], [ 0,    10, 0, undef]);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-  
+
       is_deeply([$d->freeBoard(x=>75, y=>10, l=>1)], [70, undef, 0, undef]);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-  
+
       is_deeply([$d->freeBoard(x=>40, y=>40, l=>1)], [ 0, undef, 0, undef]);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
    }
-  
+
 
 =head1 Visualize
 
@@ -796,12 +804,12 @@ Print a wire to a string
 B<Example:>
 
 
-  if (1)                                                                          
+  if (1)
    {my  $d = new;
     my $w = $d->wire(x=>3, y=>4, X=>4, Y=>4);
     is_deeply($w, {d =>0, l=>1, x=>3, X=>4, Y=>4, y=>4});
    }
-  
+
 
 =head2 svg ($D, %options)
 
@@ -814,16 +822,16 @@ Draw the bus lines by level.
 B<Example:>
 
 
-  if (1)                                                                          
+  if (1)
    {my  $d = new;
      ok $d->wire(x=>1, y=>1, X=>3, Y=>3, d=>1);
     nok $d->wire(x=>1, y=>2, X=>5, Y=>7, d=>1);                                   # Overlaps previous wire but does not start at the same point
      ok $d->wire(x=>1, y=>1, X=>7, Y=>7, d=>1);
-  
+
         $d->svg(file=>"svg/overY1");  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
    }
-  
+
 
 
 =head1 Hash Definitions
@@ -995,7 +1003,7 @@ if (1)
  {my  $d = new;                                                                 #Tlevels
    ok $d->wire(x=>1, y=>1, X=>3, Y=>3);
   nok $d->wire(x=>2, y=>1, X=>5, Y=>5);                                         # X overlaps and does not start at the same point
-   ok $d->wire(x=>1, y=>1, X=>7, Y=>7);
+   ok $d->wire(x=>1, y=>2, X=>7, Y=>7);
       $d->svg(file=>"svg/overX1");
    is_deeply($d->levels, 1);
  }
@@ -1012,11 +1020,11 @@ if (1)                                                                          
  {my  $d = new;
    ok $d->wire(x=>1, y=>1, X=>3, Y=>3, d=>1);
   nok $d->wire(x=>1, y=>2, X=>5, Y=>7, d=>1);                                   # Overlaps previous wire but does not start at the same point
-   ok $d->wire(x=>1, y=>1, X=>7, Y=>7, d=>1);
+   ok $d->wire(x=>2, y=>1, X=>7, Y=>7, d=>1);
       $d->svg(file=>"svg/overY1");
  }
 
-if (1)                                                                          #TstartAtSamePoint
+if (0)                                                                          #TstartAtSamePoint
  {my  $d = new;
    ok (my $a = $d->wire(x=>1, y=>1, X=>5, Y=>3, d=>1));                         # First
    ok (my $b = $d->wire(x=>3, y=>2, X=>5, Y=>4, d=>1));
@@ -1149,7 +1157,7 @@ if (1)                                                                          
 # 6.xx....xx
 
 #latest:;
-if (1)                                                                          #Twire3c
+if (1)                                                                          #Twire3c #TtotalLength
  {my  $d = new;
   $d->wire(x=>2, y=>2, X=>3, Y=>2);
   $d->wire(x=>2, y=>3, X=>3, Y=>3);
@@ -1169,6 +1177,8 @@ if (1)                                                                          
      { d => 0, l => 1, x => 4, X => 7, y => 3, Y => 3 },
      { d => 1, l => 1, X => 8, x => 7, y => 3, Y => 4 },
   ]);
+
+  is_deeply($d->totalLength, 31);
 
   $d->svg(file=>"svg/wire3c_n");
  }
