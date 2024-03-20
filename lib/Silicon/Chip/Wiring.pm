@@ -77,12 +77,13 @@ sub wire2($%)                                                                   
 
   delete $options{d};
   my $L = $D->levels;
-  for my $l(1..$L+1)                                                            # This loop ensures that the wire will either be placed on an existing level or added to a new level
+  for my $l(1..$L)                                                              # Try each existing level
    {my $a = $D->wire(%options, l=>$l);
     return $a if defined $a;
     my $b = $D->wire(%options, l=>$l, d=>1);
     return $b if defined $b;
    }
+  $D->wire3c(%options)                                                          # Failed to insert the wire on any existing level as an L, yet creating a new leel is expensive, so try this much more expensive technique first in an attempt to avoid creating the new level.
  }
 
 sub wire3c($%)                                                                  # Connect two points by moving out from the source to B<s> and from the target to B<t> and then connect source to B<s> to B<t>  to target.
