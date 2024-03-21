@@ -24,7 +24,9 @@ sub new(%)                                                                      
  {my (%options) = @_;                                                           # Options
   genHash(__PACKAGE__,                                                          # Wiring diagram
     %options,                                                                   # Options
-    wires => [],                                                                # Wires on diagram
+    width  => $options{width},                                                  # Width of chip
+    height => $options{height},                                                 # Height of chip
+    wires  => [],                                                               # Wires on diagram
    );
  }
 
@@ -49,7 +51,7 @@ sub wire($%)                                                                    
     l => $l,                                                                    # Level
    );
 
-  return undef unless $options{force} or $D->canLay($w, %options);              # Confirm we can lay the wire unless we are using force
+  return undef unless $options{join} or $D->canLay($w, %options);               # Confirm we can lay the wire unless we are using join
   return $w if defined $options{noplace};                                       # Do not place the wire on the diagram
   push $D->wires->@*, $w;                                                       # Append wire to diagram
   $w
@@ -72,21 +74,82 @@ sub overlays($$$$)                                                              
    $a <= $y and $b >= $x;
  }
 
-sub wire2($%)                                                                   # Try connecting two points by going along X first if that fails along Y first to see if a connection can in fact be made. Try at each level until we find the first level that we can make the connection at or create a new level to ensure that the connection is made.
- {my ($D, %options) = @_;                                                       # Diagram, options
-
-  delete $options{d};
+sub printLevelsAsCode($$%)                                                      # Print the specified levels of the wiring diagram as code so that we can test the interaction of different levels in isolation
+ {my ($D, $levels, %options) = @_;                                              # Diagram, levels, options
   my $L = $D->levels;
-  for my $l(1..$L)                                                              # Try each existing level
-   {my $a = $D->wire(%options, l=>$l);
-    return $a if defined $a;
-    my $b = $D->wire(%options, l=>$l, d=>1);
-    return $b if defined $b;
+  my %levels = map {$_=>1} @$levels;
+  my @wires = $D->wires->@*;
+
+  my @c;                                                                        # Generated code
+  for my $w(@wires)                                                             # Each wire
+   {next unless $levels{$w->l};                                                 # Try each existing level
+    push @c, sprintf '$D->wire2(x=>%4d, y=>%4d, X=>%4d, Y=>%4d);', @$w{qw(x y X Y)};
    }
-  $D->wire3c(%options)                                                          # Failed to insert the wire on any existing level as an L, yet creating a new leel is expensive, so try this much more expensive technique first in an attempt to avoid creating the new level.
+  join "\n", @c, '';
  }
 
-sub wire3c($%)                                                                  # Connect two points by moving out from the source to B<s> and from the target to B<t> and then connect source to B<s> to B<t>  to target.
+sub wire2($%)                                                                   # Try connecting two points by placing wires on one level.
+ {my ($D, %options) = @_;                                                       # Diagram, options
+  my ($px, $py, $pX, $pY) = @options{qw(x y X Y)};                              # Points to connect
+  $px == $pX and $py == $pY and confess "Source == target";                     # Confirm that we are trying to connect separate points
+
+  my $L = $D->levels;
+  for my $l(1..$L+1)                                                              # Try each existing level
+   {for my $d(0..1)
+     {my $w = $D->wire(%options, l=>$l, d=>$d);
+      return $w if defined $w;
+     }
+   }
+  #$D->wire3c(%options)                                                          # Failed to insert the wire on any existing level as an L, yet creating a new leel is expensive, so try this much more expensive technique first in an attempt to avoid creating the new level.
+ }
+
+sub wire3c($%)                                                                  # Connect two points through a third point
+ {my ($D, %options) = @_;                                                       # Diagram, options
+  my ($px, $py, $pX, $pY) = @options{qw(x y X Y)};                              # Points to connect
+  $px == $pX and $py == $pY and confess "Source == target";                     # Confirm that we are trying to connect separate points
+  my $C;                                                                        # The cost of the shortest connecting C wire
+  my sub minCost(@)                                                             # Check for lower cost connections
+   {my (@w) = @_;                                                               # Wires
+    my $c = 0; $c += $D->length($_) for @w;                                     # Sum costs
+    $C = [$c, @w] if !defined($C) or $c < $$C[0];                               # Lower cost connection?
+   }
+
+  my $levels = $D->levels;                                                      # Levels
+
+  for my $l(1..$levels)                                                         # Each level
+   {my $x1 = 0;                                                                 # Jump point search start in x
+    my $y1 = 0;                                                                 # Jump point search start in y
+    my $x2 = $D->width;                                                         # Jump point search end   in x
+    my $y2 = $D->height;                                                        # Jump point search end   in y
+    for     my $x($x1..$x2)                                                     # Jump placements in x
+     {for   my $y($y1..$y2)                                                     # Source jump placements in y
+       {for my $d(0..1)                                                         # Direction
+         {next if $x == $px and $y == $py;                                      # Avoid using the source or target as the jump point
+          next if $x == $pX and $y == $pY;
+          my $s = $D->wire(x=>$px, y=>$py, X=>$x, Y=>$y, l=>$l, d=>$d, noplace=>1); # Can we reach the jump point from the source?
+          next unless defined $s;
+          my $t = $D->wire(X=>$pX, Y=>$pY, x=>$x, y=>$y, l=>$l, d=>$d, noplace=>1); # Can we reach the jump point from the target?
+          next unless defined $t;
+          minCost($s, $t);                                                      # Lower cost?
+         }
+       }
+     }
+   }
+
+  return $C if defined $options{noplace};                                       # Do not place the wire on the diagram
+  return $D->wire(%options, l=>$levels+1) unless defined $C;                    # No connection possible on any existing level, so start a new level and connect there
+
+  if ($C)                                                                       # Create the wires
+   {my @C = @$C; shift @C;
+    for my $i(keys @C)
+     {my $c = $C[$i];
+      my $w = $D->wire(%$c, join=>1);                                           # Join the wires
+     }
+   }
+  $C
+ }
+
+sub wire3d($%)                                                                  # Connect two points by moving out from the source to B<s> and from the target to B<t> and then connect source to B<s> to B<t>  to target.
  {my ($D, %options) = @_;                                                       # Diagram, options
   my ($px, $py, $pX, $pY) = @options{qw(x y X Y)};                              # Points to connect
   my $N = $options{spread} // 4;                                                # How far we should spread out from the source and target in search of a better connection. Beware: the search takes N**4 steps
@@ -166,7 +229,7 @@ sub wire3c($%)                                                                  
    {my @C = @$C; shift @C;
     for my $i(keys @C)
      {my $c = $C[$i];
-      my $w = $D->wire(%$c, force=>1);                                          # Otherwise the central wire might not connect to the other wires and it might inavertantly start on another wores start point.  Ine way r=tp resolvethis might be to add a fan ouytt capability so that thre is never ever more than one connection between a pair of pins which would prevent an output pin from ever driving more than one input pin.
+      my $w = $D->wire(%$c, join=>1);                                           # Otherwise the central wire might not connect to the other wires and it might inavertantly start on another wores start point.  Ine way r=tp resolvethis might be to add a fan ouytt capability so that thre is never ever more than one connection between a pair of pins which would prevent an output pin from ever driving more than one input pin.
      }
    }
   $C
@@ -409,10 +472,11 @@ sub svgLevel($%)                                                                
     $svg->rect(x=>$X+1/4, y=>$Y+1/4, width=>1/2, height=>1/2, fill=>"yellow", opacity=>1);
    }
 
-  my $t = $svg->print;                                                          # Text of svg
+  my $t = $svg->print(width=>$D->width, height=>$D->height);                          # Text of svg
 
   if (my $f = $options{file})                                                   # Optionally write to an svg file
-   {owf(fpe($f, q(svg)), $t)
+   {confess "Wiring file already exists: $f\n" if -e $f;
+    owf(fpe($f, q(svg)), $t)
    }
 
   $t
@@ -456,6 +520,19 @@ Silicon::Chip::Wiring - Wire up a L<silicon|https://en.wikipedia.org/wiki/Silico
 =head2 Automatic wiring around obstacles
 
 =for html <p><img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/wire3c_n_1.svg">
+
+=head2 Assumptions
+
+The gates are on the bottom layer if the chip.  Above the gates layer there as
+many wiring levels as are needed to connect the gates. Vertical vias run from
+the pins of the gates to each layer, so each vertical via can connect to an
+input pin or an output pin of a gate.  On each level some of the vias (hence
+gate pins) are connected together by L shaped strips of metal conductor running
+along X and Y. The Y strips can cross over the X strips.  Each gate input pin
+is connect to no more than one gate output pin.  Each gate output pin is
+connected to no more than one gate input pin.  L<Silicon::Chip> automatically
+inserts fan outs to enforce this rule. The fan outs look like sea shells on the
+gate layout diagrams.
 
 =head1 Description
 
@@ -1063,7 +1140,7 @@ if (1)                                                                          
 #latest:;
 if (1)                                                                          #Twire #Tnew
  {my $N = 3;
-  my  $d = new;
+  my  $d = new(width=>$N+1, height=>$N+1) ;
   ok  $d->wire2(x=>$_, y=>1, X=>1+$_, Y=>1+$_) for 1..$N;
   $d->svg(file=>"svg/layers");
   is_deeply($d->levels, 2);
@@ -1134,14 +1211,14 @@ if (1)                                                                          
  }
 
 #latest:;
-if (1)                                                                          #Twire3c
+if (1)                                                                          #Twire3d
  {my  $d = new;
   $d->wire(x=>3, y=>4, X=>4, Y=>4);
   $d->wire(x=>3, y=>5, X=>4, Y=>5);
   $d->wire(x=>3, y=>6, X=>4, Y=>6);
   $d->wire(x=>3, y=>7, X=>4, Y=>7);
   $d->wire(x=>3, y=>8, X=>4, Y=>8);
-  my $c = $d->wire3c(x=>1, y=>6, X=>6, Y=>7);
+  my $c = $d->wire3d(x=>1, y=>6, X=>6, Y=>7);
   is_deeply($c, [13,
     { d => 1, l => 1, x => 1, X => 6, Y => 9, y => 6 },
     { d => 1, l => 1, x => 6, X => 6, y => 9, Y => 7 },
@@ -1158,8 +1235,8 @@ if (1)                                                                          
 # 6.xx....xx
 
 #latest:;
-if (1)                                                                          #Twire3c #TtotalLength
- {my  $d = new;
+if (1)                                                                          #TtotalLength
+ {my  $d = new(width=>10, height=>8);
   $d->wire(x=>2, y=>2, X=>3, Y=>2);
   $d->wire(x=>2, y=>3, X=>3, Y=>3);
   $d->wire(x=>8, y=>2, X=>9, Y=>2);
@@ -1172,7 +1249,7 @@ if (1)                                                                          
   $d->wire(x=>8, y=>5, X=>9, Y=>5);
   $d->wire(x=>8, y=>6, X=>9, Y=>6);
 
-  my $c = $d->wire3c(x=>2, y=>4, X=>8, Y=>4);
+  my $c = $d->wire3d(x=>2, y=>4, X=>8, Y=>4);
   is_deeply($c, [13,
      { d => 0, l => 1, X => 4, x => 2, Y => 3, y => 4 },
      { d => 0, l => 1, x => 4, X => 7, y => 3, Y => 3 },
@@ -1181,8 +1258,76 @@ if (1)                                                                          
 
   is_deeply($d->totalLength, 31);
 
+  $d->svg(file=>"svg/wire3d_n");
+ }
+
+#latest:;
+if (1)                                                                          #Twire2c
+ {my  $d = new(width=>10, height=>8);
+  $d->wire(x=>2, y=>2, X=>3, Y=>2);
+  $d->wire(x=>2, y=>3, X=>3, Y=>3);
+  $d->wire(x=>8, y=>2, X=>9, Y=>2);
+  $d->wire(x=>8, y=>3, X=>9, Y=>3);
+
+  $d->wire(x=>5, y=>4, X=>6, Y=>4);
+
+  $d->wire(x=>2, y=>5, X=>3, Y=>5);
+  $d->wire(x=>2, y=>6, X=>3, Y=>6);
+  $d->wire(x=>8, y=>5, X=>9, Y=>5);
+  $d->wire(x=>8, y=>6, X=>9, Y=>6);
+
+  my $c = $d->wire3c(x=>1, y=>4, X=>7, Y=>4);
+  is_deeply($d->levels, 1);
+  is_deeply($c, [12,
+    { d => 0, l => 1, x => 1, X => 4, y => 4, Y => 3 },
+    { d => 0, l => 1, X => 7, x => 4, Y => 4, y => 3 },
+  ]);
+
+  is_deeply($d->totalLength, 30);
+
   $d->svg(file=>"svg/wire3c_n");
  }
 
+#latest:;
+if (1)                                                                          #TprintLevelsAsCode
+ {my  $d = new(width=>10, height=>10);
+  ok $d->wire2(x=>1, y=>2, X=>6, Y=>2);
+  ok $d->wire2(x=>2, y=>2, X=>5, Y=>2);
+  ok $d->wire2(x=>3, y=>2, X=>4, Y=>2);
+  is_deeply($d->levels, 3);
+  is_deeply($d->printLevelsAsCode([1, 2]), <<'END');
+$D->wire2(x=>   1, y=>   2, X=>   6, Y=>   2);
+$D->wire2(x=>   2, y=>   2, X=>   5, Y=>   2);
+END
+  $d->svg(file=>"svg/levels");
+ }
+
+#latest:;
+if (0)
+ {my $d = new(width=>30, height=>30);
+#  $d->wire2(x=>  19, y=>  18, X=>  28, Y=>  42);
+#  $d->wire2(x=>  19, y=>  21, X=>  28, Y=>  44);
+#  $d->wire2(x=>  19, y=>  20, X=>  26, Y=>  18);
+#  $d->wire2(x=>  21, y=>  26, X=>  28, Y=>  17);
+#  $d->wire2(x=>  21, y=>  22, X=>  22, Y=>   5);
+#  $d->wire2(x=>  22, y=>   5, X=>  26, Y=>   5);
+#  $d->wire2(x=>  21, y=>  23, X=>  26, Y=>  21);
+  $d->wire2(x=>  21, y=>   3, X=>  23, Y=>   3);
+  $d->wire2(x=>  23, y=>   3, X=>  26, Y=>  33);
+#  $d->wire2(x=>  21, y=>  21, X=>  24, Y=>  36);
+#  $d->wire2(x=>  23, y=>  23, X=>  24, Y=>  17);
+#  $d->wire2(x=>  23, y=>   0, X=>  24, Y=>  38);
+  is_deeply($d->levels, 2);
+  $d->svg(file=>"svg/btree");
+ }
+
+latest:;
+if (1)
+ {my $d = new(width=>10, height=>10);
+  $d->wire2(x=>  1, y=>   3, X=>  3, Y=>   3);
+  $d->wire2(x=>  3, y=>   3, X=>  6, Y=>   4);
+  is_deeply($d->levels, 2);
+  $d->svg(file=>"svg/btree");
+ }
 &done_testing;
 finish: 1
