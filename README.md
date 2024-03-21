@@ -20,6 +20,19 @@ Silicon::Chip::Wiring - Wire up a [silicon](https://en.wikipedia.org/wiki/Silico
     <p><img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/wire3c_n_1.svg">
 </div>
 
+## Assumptions
+
+The gates are on the bottom layer if the chip.  Above the gates layer there as
+many wiring levels as are needed to connect the gates. Vertical vias run from
+the pins of the gates to each layer, so each vertical via can connect to an
+input pin or an output pin of a gate.  On each level some of the vias (hence
+gate pins) are connected together by L shaped strips of metal conductor running
+along X and Y. The Y strips can cross over the X strips.  Each gate input pin
+is connect to no more than one gate output pin.  Each gate output pin is
+connected to no more than one gate input pin.  [Silicon::Chip](https://metacpan.org/pod/Silicon%3A%3AChip) automatically
+inserts fan outs to enforce this rule. The fan outs look like sea shells on the
+gate layout diagrams.
+
 # Description
 
 Wire up a [silicon](https://en.wikipedia.org/wiki/Silicon) [chip](https://en.wikipedia.org/wiki/Integrated_circuit) to combine [logic gates](https://en.wikipedia.org/wiki/Logic_gate) to transform software into hardware.
