@@ -70,7 +70,7 @@ New wiring diagram.
        ok $d->wire(x=>7, y=>13, X=>5, Y=>15, d=>1);
 
       nok $d->wire(x=>1, y=>8, X=>2, Y=>10,  d=>1);
-          $d->svg(file=>"svg/square");
+          $d->svg(file=>"square");
      }
 
     if (1)
@@ -79,7 +79,7 @@ New wiring diagram.
       my  $d = new;  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
       ok  $d->wire2(x=>$_, y=>1, X=>1+$_, Y=>1+$_) for 1..$N;
-      $d->svg(file=>"svg/layers");
+      $d->svg(file=>"layers");
       is_deeply($d->levels, 2);
      }
 
@@ -124,14 +124,14 @@ New wire on a wiring diagram.
 
       nok $d->wire(x=>1, y=>8, X=>2, Y=>10,  d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-          $d->svg(file=>"svg/square");
+          $d->svg(file=>"square");
      }
 
     if (1)
      {my $N = 3;
       my  $d = new;
       ok  $d->wire2(x=>$_, y=>1, X=>1+$_, Y=>1+$_) for 1..$N;
-      $d->svg(file=>"svg/layers");
+      $d->svg(file=>"layers");
       is_deeply($d->levels, 2);
      }
 
@@ -188,7 +188,7 @@ Try connecting two points by going along X first if that fails along Y first to 
 
 
 
-          $d->svg(file=>"svg/wire2");  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+          $d->svg(file=>"wire2");  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
      }
 
@@ -217,7 +217,7 @@ Connect two points by moving out from the source to **s** and from the target to
         { d => 1, l => 1, x => 6, X => 6, y => 9, Y => 7 },
       ]);
 
-      $d->svg(file=>"svg/wire3c_u");
+      $d->svg(file=>"wire3c_u");
      }
 
     if (1)
@@ -243,7 +243,7 @@ Connect two points by moving out from the source to **s** and from the target to
          { d => 1, l => 1, X => 8, x => 7, y => 3, Y => 4 },
       ]);
 
-      $d->svg(file=>"svg/wire3c_n");
+      $d->svg(file=>"wire3c_n");
      }
 
 ## startAtSamePoint($D, $a, $b)
@@ -269,7 +269,7 @@ Whether two wires start at the same point on the same level.
 
        ok $d->startAtSamePoint($b, $e);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-          $d->svg(file=>"svg/overY2");
+          $d->svg(file=>"overY2");
      }
 
 ## length  ($D, $w)
@@ -309,7 +309,7 @@ The free space in +X, -X, +Y, -Y given a point in a level in the diagram. The lo
        ok $d->wire(x=>70, y=>30, X=>50, Y=>10);
        ok $d->wire(x=>10, y=>50, X=>30, Y=>70);
        ok $d->wire(x=>70, y=>50, X=>50, Y=>70);
-          $d->svg(file=>"svg/freeBoardX");
+          $d->svg(file=>"freeBoardX");
 
 
        is_deeply([$d->freeBoard(x=>33, y=>30, l=>1)], [30, 50,     0, undef]);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
@@ -328,7 +328,7 @@ The free space in +X, -X, +Y, -Y given a point in a level in the diagram. The lo
        ok $d->wire(x=>70, y=>30, X=>50, Y=>10, d=>1);
        ok $d->wire(x=>10, y=>50, X=>30, Y=>70, d=>1);
        ok $d->wire(x=>70, y=>50, X=>50, Y=>70, d=>1);
-          $d->svg(file=>"svg/freeBoardY");
+          $d->svg(file=>"freeBoardY");
 
 
         is_deeply([$d->freeBoard(x=>33, y=>10, l=>1)], [30,    50, 0, undef]);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
@@ -380,7 +380,7 @@ Draw the bus lines by level.
       nok $d->wire(x=>1, y=>2, X=>5, Y=>7, d=>1);                                   # Overlaps previous wire but does not start at the same point
        ok $d->wire(x=>1, y=>1, X=>7, Y=>7, d=>1);
 
-          $d->svg(file=>"svg/overY1");  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+          $d->svg(file=>"overY1");  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
      }
 
