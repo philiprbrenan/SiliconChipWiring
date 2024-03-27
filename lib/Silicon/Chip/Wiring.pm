@@ -476,7 +476,7 @@ sub svgLevel($%)                                                                
 
   if (my $f = $options{file})                                                   # Optionally write to an svg file
    {confess "Wiring file already exists: $f\n" if -e $f;
-    owf(fpe($f, q(svg)), $t)
+    owf(fpe(q(svg), $f, q(svg)), $t)
    }
 
   $t
@@ -1321,7 +1321,7 @@ if (0)
   $d->svg(file=>"svg/btree");
  }
 
-latest:;
+#latest:;
 if (1)
  {my $d = new(width=>10, height=>10);
   $d->wire2(x=>  1, y=>   3, X=>  3, Y=>   3);
@@ -1329,5 +1329,6 @@ if (1)
   is_deeply($d->levels, 2);
   $d->svg(file=>"svg/btree");
  }
+
 &done_testing;
 finish: 1
