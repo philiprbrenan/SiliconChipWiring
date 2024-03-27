@@ -576,7 +576,7 @@ B<Example:>
      ok $d->wire(x=>7, y=>13, X=>5, Y=>15, d=>1);
 
     nok $d->wire(x=>1, y=>8, X=>2, Y=>10,  d=>1);
-        $d->svg(file=>"svg/square");
+        $d->svg(file=>"square");
    }
 
   if (1)
@@ -585,7 +585,7 @@ B<Example:>
     my  $d = new;  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
     ok  $d->wire2(x=>$_, y=>1, X=>1+$_, Y=>1+$_) for 1..$N;
-    $d->svg(file=>"svg/layers");
+    $d->svg(file=>"layers");
     is_deeply($d->levels, 2);
    }
 
@@ -632,14 +632,14 @@ B<Example:>
 
     nok $d->wire(x=>1, y=>8, X=>2, Y=>10,  d=>1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-        $d->svg(file=>"svg/square");
+        $d->svg(file=>"square");
    }
 
   if (1)
    {my $N = 3;
     my  $d = new;
     ok  $d->wire2(x=>$_, y=>1, X=>1+$_, Y=>1+$_) for 1..$N;
-    $d->svg(file=>"svg/layers");
+    $d->svg(file=>"layers");
     is_deeply($d->levels, 2);
    }
 
@@ -702,7 +702,7 @@ B<Example:>
 
 
 
-        $d->svg(file=>"svg/wire2");  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+        $d->svg(file=>"wire2");  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
    }
 
@@ -733,7 +733,7 @@ B<Example:>
       { d => 1, l => 1, x => 6, X => 6, y => 9, Y => 7 },
     ]);
 
-    $d->svg(file=>"svg/wire3c_u");
+    $d->svg(file=>"wire3c_u");
    }
 
   if (1)
@@ -759,7 +759,7 @@ B<Example:>
        { d => 1, l => 1, X => 8, x => 7, y => 3, Y => 4 },
     ]);
 
-    $d->svg(file=>"svg/wire3c_n");
+    $d->svg(file=>"wire3c_n");
    }
 
 
@@ -787,7 +787,7 @@ B<Example:>
 
      ok $d->startAtSamePoint($b, $e);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-        $d->svg(file=>"svg/overY2");
+        $d->svg(file=>"overY2");
    }
 
 
@@ -831,7 +831,7 @@ B<Example:>
      ok $d->wire(x=>70, y=>30, X=>50, Y=>10);
      ok $d->wire(x=>10, y=>50, X=>30, Y=>70);
      ok $d->wire(x=>70, y=>50, X=>50, Y=>70);
-        $d->svg(file=>"svg/freeBoardX");
+        $d->svg(file=>"freeBoardX");
 
 
      is_deeply([$d->freeBoard(x=>33, y=>30, l=>1)], [30, 50,     0, undef]);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
@@ -850,7 +850,7 @@ B<Example:>
      ok $d->wire(x=>70, y=>30, X=>50, Y=>10, d=>1);
      ok $d->wire(x=>10, y=>50, X=>30, Y=>70, d=>1);
      ok $d->wire(x=>70, y=>50, X=>50, Y=>70, d=>1);
-        $d->svg(file=>"svg/freeBoardY");
+        $d->svg(file=>"freeBoardY");
 
 
       is_deeply([$d->freeBoard(x=>33, y=>10, l=>1)], [30,    50, 0, undef]);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
@@ -906,7 +906,7 @@ B<Example:>
     nok $d->wire(x=>1, y=>2, X=>5, Y=>7, d=>1);                                   # Overlaps previous wire but does not start at the same point
      ok $d->wire(x=>1, y=>1, X=>7, Y=>7, d=>1);
 
-        $d->svg(file=>"svg/overY1");  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+        $d->svg(file=>"overY1");  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
    }
 
@@ -1082,7 +1082,7 @@ if (1)
    ok $d->wire(x=>1, y=>1, X=>3, Y=>3);
   nok $d->wire(x=>2, y=>1, X=>5, Y=>5);                                         # X overlaps and does not start at the same point
    ok $d->wire(x=>1, y=>2, X=>7, Y=>7);
-      $d->svg(file=>"svg/overX1");
+      $d->svg(file=>"overX1");
    is_deeply($d->levels, 1);
  }
 
@@ -1091,7 +1091,7 @@ if (1)
    ok $d->wire(x=>1, y=>1, X=>3, Y=>5);                                         # First
    ok $d->wire(x=>2, y=>3, X=>4, Y=>5);
   nok $d->wire(x=>2, y=>3, X=>3, Y=>7);                                         # Y overlaps first but did not start at the same point as first
-      $d->svg(file=>"svg/overX2");
+      $d->svg(file=>"overX2");
  }
 
 if (1)                                                                          #Tsvg
@@ -1099,7 +1099,7 @@ if (1)                                                                          
    ok $d->wire(x=>1, y=>1, X=>3, Y=>3, d=>1);
   nok $d->wire(x=>1, y=>2, X=>5, Y=>7, d=>1);                                   # Overlaps previous wire but does not start at the same point
    ok $d->wire(x=>2, y=>1, X=>7, Y=>7, d=>1);
-      $d->svg(file=>"svg/overY1");
+      $d->svg(file=>"overY1");
  }
 
 if (0)                                                                          #TstartAtSamePoint
@@ -1110,7 +1110,7 @@ if (0)                                                                          
    ok (my $e = $d->wire(x=>3, y=>2, X=>7, Y=>4, d=>1));
   nok $d->startAtSamePoint($b, $a);
    ok $d->startAtSamePoint($b, $e);
-      $d->svg(file=>"svg/overY2");
+      $d->svg(file=>"overY2");
  }
 
 if (1)                                                                          #Twire #Tnew
@@ -1126,7 +1126,7 @@ if (1)                                                                          
    ok $d->wire(x=>7, y=>13, X=>5, Y=>15, d=>1);
 
   nok $d->wire(x=>1, y=>8, X=>2, Y=>10,  d=>1);
-      $d->svg(file=>"svg/square");
+      $d->svg(file=>"square");
  }
 
 if (1)                                                                          #Twire2
@@ -1134,7 +1134,7 @@ if (1)                                                                          
    ok $d->wire (x=>1, y=>1, X=>3, Y=>3);
    ok $d->wire2(x=>1, y=>3, X=>3, Y=>5);
 
-      $d->svg(file=>"svg/wire2");
+      $d->svg(file=>"wire2");
  }
 
 #latest:;
@@ -1142,7 +1142,7 @@ if (1)                                                                          
  {my $N = 3;
   my  $d = new(width=>$N+1, height=>$N+1) ;
   ok  $d->wire2(x=>$_, y=>1, X=>1+$_, Y=>1+$_) for 1..$N;
-  $d->svg(file=>"svg/layers");
+  $d->svg(file=>"layers");
   is_deeply($d->levels, 2);
  }
 
@@ -1153,7 +1153,7 @@ if (1)                                                                          
    ok $d->wire(x=>70, y=>30, X=>50, Y=>10);
    ok $d->wire(x=>10, y=>50, X=>30, Y=>70);
    ok $d->wire(x=>70, y=>50, X=>50, Y=>70);
-      $d->svg(file=>"svg/freeBoardX");
+      $d->svg(file=>"freeBoardX");
 
    is_deeply([$d->freeBoard(x=>33, y=>30, l=>1)], [30, 50,     0, undef]);
    is_deeply([$d->freeBoard(x=>30, y=>47, l=>1)], [0,  undef, 30, 50]);
@@ -1167,7 +1167,7 @@ if (1)                                                                          
    ok $d->wire(x=>70, y=>30, X=>50, Y=>10, d=>1);
    ok $d->wire(x=>10, y=>50, X=>30, Y=>70, d=>1);
    ok $d->wire(x=>70, y=>50, X=>50, Y=>70, d=>1);
-      $d->svg(file=>"svg/freeBoardY");
+      $d->svg(file=>"freeBoardY");
 
     is_deeply([$d->freeBoard(x=>33, y=>10, l=>1)], [30,    50, 0, undef]);
     is_deeply([$d->freeBoard(x=>5,  y=>10, l=>1)], [ 0,    10, 0, undef]);
@@ -1189,7 +1189,7 @@ if (1)                                                                          
  {my  $d = new;
    ok $d->wire(x=>3, y=>0, X=>2, Y=>2, d=>1);
   nok $d->wire(x=>4, y=>0, X=>3, Y=>2, d=>1);
-      $d->svg(file=>"svg/ll2");
+      $d->svg(file=>"ll2");
   is_deeply($d->levels, 1);
  }
 
@@ -1224,7 +1224,7 @@ if (1)                                                                          
     { d => 1, l => 1, x => 6, X => 6, y => 9, Y => 7 },
   ]);
 
-  $d->svg(file=>"svg/wire3c_u");
+  $d->svg(file=>"wire3c_u");
  }
 #  123456789
 # 1.........
@@ -1258,7 +1258,7 @@ if (1)                                                                          
 
   is_deeply($d->totalLength, 31);
 
-  $d->svg(file=>"svg/wire3d_n");
+  $d->svg(file=>"wire3d_n");
  }
 
 #latest:;
@@ -1285,7 +1285,7 @@ if (1)                                                                          
 
   is_deeply($d->totalLength, 30);
 
-  $d->svg(file=>"svg/wire3c_n");
+  $d->svg(file=>"wire3c_n");
  }
 
 #latest:;
@@ -1299,7 +1299,7 @@ if (1)                                                                          
 $D->wire2(x=>   1, y=>   2, X=>   6, Y=>   2);
 $D->wire2(x=>   2, y=>   2, X=>   5, Y=>   2);
 END
-  $d->svg(file=>"svg/levels");
+  $d->svg(file=>"levels");
  }
 
 #latest:;
@@ -1318,7 +1318,7 @@ if (0)
 #  $d->wire2(x=>  23, y=>  23, X=>  24, Y=>  17);
 #  $d->wire2(x=>  23, y=>   0, X=>  24, Y=>  38);
   is_deeply($d->levels, 2);
-  $d->svg(file=>"svg/btree");
+  $d->svg(file=>"btree");
  }
 
 #latest:;
@@ -1327,7 +1327,7 @@ if (1)
   $d->wire2(x=>  1, y=>   3, X=>  3, Y=>   3);
   $d->wire2(x=>  3, y=>   3, X=>  6, Y=>   4);
   is_deeply($d->levels, 2);
-  $d->svg(file=>"svg/btree");
+  $d->svg(file=>"btree");
  }
 
 &done_testing;
