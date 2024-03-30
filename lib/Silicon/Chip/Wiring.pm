@@ -175,8 +175,8 @@ sub radiateOut($$$$$%)                                                          
 sub wire3d($%)                                                                  # Connect two points by moving out from the source to B<s> and from the target to B<t> and then connect source to B<s> to B<t>  to target.
  {my ($D, %options) = @_;                                                       # Diagram, options
   my ($px, $py, $pX, $pY) = @options{qw(x y X Y)};                              # Points to connect
-  my $dx = $options{dx} // 0;                                                   # Radius to consider in x
-  my $dy = $options{dy} // 0;                                                   # Radius to consider in y
+  my $dx = $options{searchDx} // 0;                                             # Radius to consider in x when searching for jump points
+  my $dy = $options{searchDy} // 0;                                             # Radius to consider in y  when searching for jump points
   my $N  = $options{spread} // 4;                                               # How far we should spread out from the source and target in search of a better connection. Beware: the search takes N**4 steps
   $px == $pX and $py == $pY and confess "Source == target";                     # Confirm that we are trying to connect separate points
 
@@ -187,15 +187,32 @@ sub wire3d($%)                                                                  
     $C = [$c, @w] if !defined($C) or $c < $$C[0];                               # Lower cost connection?
    }
 
+  my sub cheaper($$$$)                                                          # Worth continuing with a wire because it is shorter than the current cost
+   {!defined($C) or  &distance(@_) < $$C[0];                                    # Potentially lower cost connection?
+   }
+
   my $levels = $D->levels;                                                      # Levels
 
-  for my $l(1..$levels)                                                         # Each level
-   {for my $d(0..1)                                                             # Check for a direct connection at this level
-     {if (my $w = $D->wire(x=>$px, y=>$py, X=>$pX, Y=>$pY, l=>$l, d=>$d, noplace=>1)) # Can we reach the source jump point from the source?
-       {minCost($w);                                                            # Cost of the connection
-       }
+  my %routes;                                                                   # Test wires cache
+
+  my sub route($$$$$)                                                           # Test a wire
+   {my ($x, $y, $X, $Y, $l, $d) = @_;                                           # Start x, start y, end x, end y, level
+    return undef unless cheaper($x, $y, $X, $Y);                                # Worth continuing with a wire because it is shorter than the current cost
+    for my $d(0..1)                                                             # Each possible direction
+     {my $s = "$x $y $X $Y $l $d";                                              # Cache key
+      return $routes{$s} if exists $routes{$s};                                 # Do we know the result for this wire?
+      my $w = $D->wire(x=>$x, y=>$y, X=>$X, Y=>$Y, l=>$l, d=>$d, noplace=>1);   # Can we reach the source jump point from the source?
+      return $routes{$s} = $w if $w;                                            # Wire could be routed
+     }
+    undef                                                                       # Cannot route a wire between these two points using an L
+   };
+
+  for my $l(1..$levels)                                                         # Can we reach the target directly from the source on any level
+   {if (my $w = route($px, $py, $pX, $pY, $l))                                  # Can we reach the source jump point from the source on this level?
+     {minCost($w);                                                              # Cost of the connection
      }
    }
+  return $C if $C;                                                              # No other connection could be better than a direct connection
 
   my @s = $D->radiateOut($px, $py, $dx, $dy);                                   # X radius
   my @t = $D->radiateOut($pX, $pY, $dx, $dy);                                   # Y radius
@@ -204,48 +221,39 @@ sub wire3d($%)                                                                  
    {my ($sx, $sy) = @$s;
     next if $sx == $px and $sy == $py;                                          # Avoid using the source or target as the jump point
     next if $sx == $pX and $sy == $pY;
+
     for my $ls(1..$levels)                                                      # Source level
-     {for my $d(0..1)                                                           # Direction
-       {my $sw = $D->wire(x=>$px, y=>$py, X=>$sx, Y=>$sy, l=>$ls, d=>$d, noplace=>1); # Can we reach the source jump point from the source?
-        next unless defined $sw;
-        if (my $w = $D->wire(x=>$sx, y=>$sy, X=>$pX, Y=>$pY, l=>$ls, d=>$d, noplace=>1)) # Can we reach the source jump point from the target?
-         {minCost($sw, $w);                                                     # Cost of the connection
-         }
+     {my $sw = route($px, $py, $sx, $sy, $ls);                                  # Can we reach the source jump point from the source?
+      next unless defined $sw;
+      if (my $w = route($sx, $sy, $pX, $pY, $ls))                               # Can we reach the source jump point from the target?
+       {minCost($sw, $w);                                                       # Cost of the connection
+       }
 
-        for my $t(@t)                                                           # Target jump placements
-         {my ($tx, $ty) = @$t;
-          next if $tx == $px and $ty == $py;                                    # Avoid using the source or target as the jump point
-          next if $tx == $pX and $ty == $pY;
+      for my $t(@t)                                                             # Target jump placements
+       {my ($tx, $ty) = @$t;
+        next if $tx == $px and $ty == $py;                                      # Avoid using the source or target as the jump point
+        next if $tx == $pX and $ty == $pY;
 
-          for my $lt(1..$levels)                                                # Target level
-           {for my $d(0..1)                                                     # Direction
-             {my $tw = $D->wire (x=>$tx, y=>$ty, X=>$pX, Y=>$pY, l=>$lt, d=>$d, noplace=>1); # Can we reach the target jump point from the target
-              next unless defined $tw;
-              if (my $w = $D->wire(x=>$px, y=>$py, X=>$tx, Y=>$ty, l=>$lt, d=>$d, noplace=>1)) # Can we reach the target jump point from the source?
-               {minCost($w, $tw);                                               # Cost of the connection
-               }
+        for my $lt(1..$levels)                                                  # Target level
+         {my $tw = route($tx, $ty, $pX, $pY, $lt);                              # Can we reach the target jump point from the target
+          next unless defined $tw;
+          if (my $w = route($px, $py, $tx, $ty, $lt))                           # Can we reach the target jump point from the source?
+           {minCost($w, $tw);                                                   # Cost of the connection
+           }
 
-              if ($sx == $tx and $sy == $ty)                                    # Identical jump points
-               {my $c = $D->length($sw) + $D->length($tw);                      # Cost of this connection
-                minCost($sw, $tw);                                              # Lower cost?
-               }
-              elsif (my $Sw = $D->wire(x=>$px, y=>$py, X=>$tx, Y=>$ty, l=>$lt, d=>$d, noplace=>1)) # Can we reach the target jump point directly from the source
-               {my $c = $D->length($Sw) + $D->length($tw);                      # Cost of this connection
-                minCost($Sw, $tw);                                              # Lower cost?
-               }
-              elsif (my $Tw = $D->wire(x=>$sx, y=>$sy, X=>$pX, Y=>$pY, l=>$lt, d=>$d, noplace=>1)) # Can we reach the target  directly from the source jump point
-               {my $c = $D->length($sw) + $D->length($Tw);                      # Cost of this connection
-                minCost($sw, $Tw);                                              # Lower cost?
-               }
-              else                                                              # Differing jump points
-               {for my $ll(1..$levels)                                          # Level for middle wire
-                 {for my $d(0..1)                                               # Direction
-                   {if (my $stw = $D->wire(x=>$sx, y=>$sy, X=>$tx, Y=>$ty, l=>$ll, d=>$d, noplace=>1)) # Can we reach the target jump point from the source jump point
-                     {my $c = $D->length($sw) + $D->length($tw) + $D->length($stw); # Cost of this connection including the vertical connections
-                      minCost($sw, $stw, $tw);                                  # Lower cost?
-                     }
-                   }
-                 }
+          if ($sx == $tx and $sy == $ty)                                        # Identical jump points
+           {minCost($sw, $tw);                                                  # Lower cost?
+           }
+          elsif (my $Sw = route($px, $py, $tx, $ty, $lt))                       # Can we reach the target jump point directly from the source
+           {minCost($Sw, $tw);                                                  # Lower cost?
+           }
+          elsif (my $Tw = route($sx, $sy, $pX, $pY, $lt))                       # Can we reach the target  directly from the source jump point
+           {minCost($sw, $Tw);                                                  # Lower cost?
+           }
+          else                                                                  # Differing jump points
+           {for my $ll(1..$levels)                                              # Level for middle wire
+             {if (my $stw = route($sx, $sy, $tx, $ty, $ll))                     # Can we reach the target jump point from the source jump point
+               {minCost($sw, $stw, $tw);                                        # Lower cost?
                }
              }
            }
@@ -271,6 +279,11 @@ sub startAtSamePoint($$$)                                                       
   my ($x, $y, $l) = @$a{qw(x y l)};
   my ($X, $Y, $L) = @$b{qw(x y l)};
   $l == $L and $x == $X and $y == $Y                                            # True if they start at the same point
+ }
+
+sub distance($$$$)                                                              # Manhattan distance between two points
+ {my ($x, $y, $X, $Y) = @_;                                                     # Start x, start y, end x, end y
+  abs($X - $x) + abs($Y - $y)
  }
 
 sub length($$)                                                                  # Length of a wire including the vertical connections
@@ -1260,11 +1273,11 @@ if (1)                                                                          
   $d->wire(x=>3, y=>6, X=>4, Y=>6);
   $d->wire(x=>3, y=>7, X=>4, Y=>7);
   $d->wire(x=>3, y=>8, X=>4, Y=>8);
-  my $c = $d->wire3d(x=>1, y=>6, X=>6, Y=>7, dx=>1, dy=>2);
+  my $c = $d->wire3d(x=>1, y=>6, X=>6, Y=>7, searchDx=>1, searchDy=>2);
   is_deeply($c, [13,
-    { d => 1, l => 1, x => 1, X => 6, Y => 9, y => 6, n=>''},
-    { d => 1, l => 1, x => 6, X => 6, y => 9, Y => 7, n=>''},
-  ]);
+     { d => 1, l => 1, n => "", X => 6, x => 1, Y => 9, y => 6 },
+     { d => 0, l => 1, n => "", x => 6, X => 6, Y => 7, y => 9 },
+   ]);
 
   $d->svg(file=>"wire3c_u");
  }
@@ -1291,7 +1304,7 @@ if (1)                                                                          
   $d->wire(x=>8, y=>5, X=>9, Y=>5);
   $d->wire(x=>8, y=>6, X=>9, Y=>6);
 
-  my $c = $d->wire3d(x=>2, y=>4, X=>8, Y=>4, dx=>2, dy=>1);
+  my $c = $d->wire3d(x=>2, y=>4, X=>8, Y=>4, searchDx=>2, searchDy=>1);
   is_deeply($c, [13,
     { d => 0, l => 1, X => 4, x => 2, Y => 4, y => 4, n=>'' },
     { d => 1, l => 1, X => 7, x => 4, Y => 3, y => 4, n=>'' },
