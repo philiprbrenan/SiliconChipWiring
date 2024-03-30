@@ -1316,7 +1316,7 @@ if (1)                                                                          
  }
 
 #latest:;
-if (1)                                                                          #Twire2c
+if (1)                                                                          #Twire3c
  {my  $d = new(width=>10, height=>8);
   $d->wire(x=>2, y=>2, X=>3, Y=>2);
   $d->wire(x=>2, y=>3, X=>3, Y=>3);
@@ -1366,6 +1366,11 @@ if (1)
  }
 
 #latest:;
+if (1)                                                                          #Tdistance
+ {is_deeply(distance(2,1,  1, 2), 2);
+ }
+
+#latest:;
 if (1)                                                                          #TradiateOut
  {my $d = new(width=>5, height=>5);
   my @p = $d->radiateOut(2, 2, 4, 2);
@@ -1376,7 +1381,7 @@ if (1)                                                                          
 #     xx
 
 #latest:;
-if (1)
+if (1)                                                                          #Tprint
  {my $N = 4; my $G = 2;
   my $d = new(width=>$N+$G, height=>$N);
   for my $g(1..$N)
