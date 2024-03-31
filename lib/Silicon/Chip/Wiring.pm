@@ -96,7 +96,7 @@ sub wire2($%)                                                                   
   $px == $pX and $py == $pY and confess "Source == target";                     # Confirm that we are trying to connect separate points
 
   my $L = $D->levels;                                                           # Levels to try
-   ++$L unless $options{route};                                                 # Add new level if necessary and no other routing methodology exists to deal with recalcitrant connections
+   ++$L unless $route =~ m(\A(c|d)\Z);                                          # Add new level if necessary and no other routing methodology exists to deal with recalcitrant connections
   for my $l(1..$L)                                                              # Try each existing level
    {for my $d(0..1)
      {my $w = $D->wire(%options, l=>$l, d=>$d);
@@ -177,7 +177,6 @@ sub wire3d($%)                                                                  
   my ($px, $py, $pX, $pY) = @options{qw(x y X Y)};                              # Points to connect
   my $dx = $options{searchDx} // 0;                                             # Radius to consider in x when searching for jump points
   my $dy = $options{searchDy} // 0;                                             # Radius to consider in y  when searching for jump points
-  my $N  = $options{spread} // 4;                                               # How far we should spread out from the source and target in search of a better connection. Beware: the search takes N**4 steps
   $px == $pX and $py == $pY and confess "Source == target";                     # Confirm that we are trying to connect separate points
 
   my $C;                                                                        # The cost of the shortest connecting C wire
