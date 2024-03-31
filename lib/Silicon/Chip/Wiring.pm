@@ -5,7 +5,7 @@
 #-------------------------------------------------------------------------------
 use v5.34;
 package Silicon::Chip::Wiring;
-our $VERSION = 20240308;
+our $VERSION = 20240331;
 use warnings FATAL => qw(all);
 use strict;
 use Carp;
@@ -225,7 +225,8 @@ sub wire3d($%)                                                                  
      {my $sw = route($px, $py, $sx, $sy, $ls);                                  # Can we reach the source jump point from the source?
       next unless defined $sw;
       if (my $w = route($sx, $sy, $pX, $pY, $ls))                               # Can we reach the source jump point from the target?
-       {minCost($sw, $w);                                                       # Cost of the connection
+       {say STDERR "AAAA ", dump($sw, $w);
+        minCost($sw, $w);                                                       # Cost of the connection
        }
 
       for my $t(@t)                                                             # Target jump placements
