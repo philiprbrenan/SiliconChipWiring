@@ -49,12 +49,12 @@ sub wire($%)                                                                    
     Y => $Y,                                                                    # End   y position of wire
     d => $d,                                                                    # The direction to draw first, x: 0, y:1
     l => $l,                                                                    # Level
-    n => $options{n}//'',                                                    # Optional name
+    n => $options{n}//'',                                                       # Optional name
+    s => $options{s}//0,                                                        # Start point
+    f => $options{f}//0,                                                        # Finish point
    );
-
-  return undef unless $options{join} or $D->canLay($w, %options);               # Confirm we can lay the wire unless we are using join
-  return $w if defined $options{noplace};                                       # Do not place the wire on the diagram
-  push $D->wires->@*, $w;                                                       # Append wire to diagram
+  return undef unless defined($options{tested}) or $D->canLay($w, %options);    # Confirm we can lay the wire unless we are controlling placement
+  push $D->wires->@*, $w unless defined $options{noplace};                      # Append wire to diagram unless asked not to
   $w
  }
 
@@ -99,7 +99,7 @@ sub wire2($%)                                                                   
    ++$L unless $route =~ m(\A(c|d)\Z);                                          # Add new level if necessary and no other routing methodology exists to deal with recalcitrant connections
   for my $l(1..$L)                                                              # Try each existing level
    {for my $d(0..1)
-     {my $w = $D->wire(%options, l=>$l, d=>$d);
+     {my $w = $D->wire(%options, l=>$l, d=>$d, s=>1, f=>1);
       return $w if defined $w;
      }
    }
@@ -146,9 +146,10 @@ sub wire3c($%)                                                                  
 
   if ($C)                                                                       # Create the wires
    {my @C = @$C; shift @C;
+    $C[0]->s = 1; $C[-1]->f = 1;                                                # Mark the start and end of the wires
     for my $i(keys @C)
      {my $c = $C[$i];
-      my $w = $D->wire(%$c, join=>1);                                           # Join the wires
+      my $w = $D->wire(%$c);                                                    # Join the wires
      }
    }
   $C
@@ -174,20 +175,28 @@ sub radiateOut($$$$$%)                                                          
 
 sub wire3d($%)                                                                  # Connect two points by moving out from the source to B<s> and from the target to B<t> and then connect source to B<s> to B<t>  to target.
  {my ($D, %options) = @_;                                                       # Diagram, options
-  my ($px, $py, $pX, $pY) = @options{qw(x y X Y)};                              # Points to connect
-  my $dx = $options{searchDx} // 0;                                             # Radius to consider in x when searching for jump points
-  my $dy = $options{searchDy} // 0;                                             # Radius to consider in y  when searching for jump points
+  my ($px, $py, $pX, $pY, $name, $debug) = @options{qw(x y X Y n debug)};       # Points to connect
+  my $dx = $options{searchDx} // 1;                                             # Radius to consider in x when searching for jump points
+  my $dy = $options{searchDy} // 1;                                             # Radius to consider in y  when searching for jump points
   $px == $pX and $py == $pY and confess "Source == target";                     # Confirm that we are trying to connect separate points
 
-  my $C;                                                                        # The cost of the shortest connecting C wire
+  my $C = genHash(__PACKAGE__."::CompositeWireL",                               # The cost of the shortest connecting C wire
+    diagram => $D,                                                              # Diagram on which we are drawing
+    cost    => undef,                                                           # Cost of the connection
+    wires   => [],                                                              # L shaped wires in connection
+  );
+
   my sub minCost(@)                                                             # Check for lower cost connections
    {my (@w) = @_;                                                               # Wires
     my $c = 0; $c += $D->length($_) for @w;                                     # Sum costs
-    $C = [$c, @w] if !defined($C) or $c < $$C[0];                               # Lower cost connection?
+    if (!defined($C->cost) or $c < $C->cost)                                    # Lower cost connection?
+     {$C->cost  = $c;
+      $C->wires = [@w];
+     }
    }
 
   my sub cheaper($$$$)                                                          # Worth continuing with a wire because it is shorter than the current cost
-   {!defined($C) or  &distance(@_) < $$C[0];                                    # Potentially lower cost connection?
+   {!defined($C->cost) or  &distance(@_) < $C->cost;                            # Potentially lower cost connection?
    }
 
   my $levels = $D->levels;                                                      # Levels
@@ -200,18 +209,21 @@ sub wire3d($%)                                                                  
     for my $d(0..1)                                                             # Each possible direction
      {my $s = "$x $y $X $Y $l $d";                                              # Cache key
       return $routes{$s} if exists $routes{$s};                                 # Do we know the result for this wire?
-      my $w = $D->wire(x=>$x, y=>$y, X=>$X, Y=>$Y, l=>$l, d=>$d, noplace=>1);   # Can we reach the source jump point from the source?
+
+      my $w = $D->wire(x=>$x, y=>$y, X=>$X, Y=>$Y, l=>$l, d=>$d,                # Can we reach the source jump point from the source?
+        ($name ? (n => $name) : ()), noplace=>1);
       return $routes{$s} = $w if $w;                                            # Wire could be routed
      }
     undef                                                                       # Cannot route a wire between these two points using an L
    };
+
 
   for my $l(1..$levels)                                                         # Can we reach the target directly from the source on any level
    {if (my $w = route($px, $py, $pX, $pY, $l))                                  # Can we reach the source jump point from the source on this level?
      {minCost($w);                                                              # Cost of the connection
      }
    }
-  return $C if $C;                                                              # No other connection could be better than a direct connection
+  return $C if defined $C->cost;                                                # No other connection could be better than a direct connection
 
   my @s = $D->radiateOut($px, $py, $dx, $dy);                                   # X radius
   my @t = $D->radiateOut($pX, $pY, $dx, $dy);                                   # Y radius
@@ -220,13 +232,11 @@ sub wire3d($%)                                                                  
    {my ($sx, $sy) = @$s;
     next if $sx == $px and $sy == $py;                                          # Avoid using the source or target as the jump point
     next if $sx == $pX and $sy == $pY;
-
     for my $ls(1..$levels)                                                      # Source level
      {my $sw = route($px, $py, $sx, $sy, $ls);                                  # Can we reach the source jump point from the source?
       next unless defined $sw;
       if (my $w = route($sx, $sy, $pX, $pY, $ls))                               # Can we reach the source jump point from the target?
-       {say STDERR "AAAA ", dump($sw, $w);
-        minCost($sw, $w);                                                       # Cost of the connection
+       {minCost($sw, $w);                                                       # Cost of the connection
        }
 
       for my $t(@t)                                                             # Target jump placements
@@ -240,6 +250,7 @@ sub wire3d($%)                                                                  
           if (my $w = route($px, $py, $tx, $ty, $lt))                           # Can we reach the target jump point from the source?
            {minCost($w, $tw);                                                   # Cost of the connection
            }
+
 
           if ($sx == $tx and $sy == $ty)                                        # Identical jump points
            {minCost($sw, $tw);                                                  # Lower cost?
@@ -263,13 +274,12 @@ sub wire3d($%)                                                                  
    }
 
   return $C if defined $options{noplace};                                       # Do not place the wire on the diagram
-  return $D->wire(%options, l=>$levels+1) unless defined $C;                    # No connection possible on any existing level, so start a new level and connect there
-  if ($C)                                                                       # Create the wires
-   {my @C = @$C; shift @C;
-    for my $i(keys @C)
-     {my $c = $C[$i];
-      my $w = $D->wire(%$c, join=>1);                                           # Otherwise the central wire might not connect to the other wires and it might inavertantly start on another wores start point.  Ine way r=tp resolvethis might be to add a fan ouytt capability so that thre is never ever more than one connection between a pair of pins which would prevent an output pin from ever driving more than one input pin.
-     }
+  minCost($D->wire(%options, l=>$levels+1)) unless defined $C->cost;            # No connection possible on any existing level, so start a new level and connect there
+
+  my @w = $C->wires->@*;
+  $w[0]->s = 1; $w[-1]->f = 1;                                                # Mark start and end of composite wire
+  for my $w(@w)
+   {$D->wire(%$w, tested=>1);
    }
   $C
  }
@@ -290,9 +300,9 @@ sub length($$)                                                                  
  {my ($D, $w) = @_;                                                             # Drawing, wire
   my ($x, $y, $X, $Y) = @$w{qw(x y X Y)};
   my $dx = abs($X - $x); my $dy = abs($Y - $y);
-  return 1 + $dx unless $dy;
-  return 1 + $dy unless $dx;
-  2 + $dx + $dy
+  return 1 + $dx unless $dy;  # Dubious - why is there a vertical connection here?
+  return 1 + $dy unless $dx;  # Ditto
+  2 + $dx + $dy               # Why 2 ?
  }
 
 sub totalLength($%)                                                             # Total length of all the wires
@@ -433,21 +443,35 @@ sub canLayY($$%)                                                                
 
 #D1 Visualize                                                                   # Visualize a Silicon chip wiring diagrams
 
+my sub wireHeader()                                                             #P Wire header
+ {"   x,   y  S      X,   Y  F   L  d  Name";
+ }
+
 sub print($%)                                                                   # Print a diagram
  {my ($d, %options) = @_;                                                       # Drawing, options
-  my @t;
-  push @t, "   x,   y      X,   Y   L  d  Name";
+  my @t; my $l = 0;
+  push @t, wireHeader;
   for my $w($d->wires->@*)
    {push @t, $d->printWire($w);
+    $l += $d->length($w);
    }
+  unshift @t, "Length: $l";
   join "\n", @t, ''
  }
 
-
 sub printWire($$)                                                               # Print a wire to a string
  {my ($D, $W) = @_;                                                             # Drawing, wire
-  my ($x, $y, $X, $Y, $l, $d, $n) = @$W{qw(x y X Y l d n)};
-  sprintf "%4d,%4d   %4d,%4d  %2d  %d".($n ? "  $n": ""), $x, $y, $X, $Y, $l, $d
+  my ($x, $y, $X, $Y, $l, $d, $n, $s, $f) = @$W{qw(x y X Y l d n s f)};
+  sprintf "%4d,%4d,%2d   %4d,%4d,%2d  %2d  %d".($n ? "  $n": ""), $x, $y, $s, $X, $Y, $f, $l, $d
+ }
+
+sub Silicon::Chip::Wiring::CompositeWireL::print($%)                            # Print a composite wire
+ {my ($cc, %options) = @_;                                                      # Composite connection, options
+  my @t = "Cost: ".($cc->cost//'?')."\n".wireHeader;
+  for my $w($cc->wires->@*)
+   {push @t, printWire($cc->diagram, $w);
+   }
+  join "\n", @t, '';
  }
 
 sub svg($%)                                                                     # Draw the bus lines by level.
@@ -1118,12 +1142,10 @@ under the same terms as Perl itself.
 
 =cut
 
-
-
 goto finish if caller;
 clearFolder(q(svg), 99);                                                        # Clear the output svg folder
 my $start = time;
-eval "use Test::More";
+eval "use Test::More tests=>56";
 eval "Test::More->builder->output('/dev/null')" if -e q(/home/phil/);
 eval {goto latest} if -e q(/home/phil/);
 
@@ -1262,7 +1284,7 @@ if (1)                                                                          
 if (1)                                                                          #TprintWire
  {my  $d = new;
   my $w = $d->wire(x=>3, y=>4, X=>4, Y=>4);
-  is_deeply($w, {d =>0, l=>1, x=>3, X=>4, Y=>4, y=>4, n=>''});
+  is_deeply($w, {d =>0, l=>1, x=>3, X=>4, Y=>4, y=>4, n=>'', s=>0, f=>0});
  }
 
 #latest:;
@@ -1274,11 +1296,13 @@ if (1)                                                                          
   $d->wire(x=>3, y=>7, X=>4, Y=>7);
   $d->wire(x=>3, y=>8, X=>4, Y=>8);
   my $c = $d->wire3d(x=>1, y=>6, X=>6, Y=>7, searchDx=>1, searchDy=>2);
-  is_deeply($c, [13,
-     { d => 1, l => 1, n => "", X => 6, x => 1, Y => 9, y => 6 },
-     { d => 0, l => 1, n => "", x => 6, X => 6, Y => 7, y => 9 },
-   ]);
 
+  is_deeply($c->print, <<END);
+Cost: 13
+   x,   y  S      X,   Y  F   L  d  Name
+   1,   6, 1      6,   9, 0   1  1
+   6,   9, 0      6,   7, 1   1  0
+END
   $d->svg(file=>"wire3c_u");
  }
 #  123456789
@@ -1290,29 +1314,47 @@ if (1)                                                                          
 # 6.xx....xx
 
 #latest:;
-if (1)                                                                          #TtotalLength
+if (1)                                                                          #TtotalLength #TSilicon::Chip::Wiring::CompositeWireL::print
  {my  $d = new(width=>10, height=>8);
-  $d->wire(x=>2, y=>2, X=>3, Y=>2);
-  $d->wire(x=>2, y=>3, X=>3, Y=>3);
-  $d->wire(x=>8, y=>2, X=>9, Y=>2);
-  $d->wire(x=>8, y=>3, X=>9, Y=>3);
+  $d->wire(x=>2, y=>2, X=>3, Y=>2, n=>"a");
+  $d->wire(x=>2, y=>3, X=>3, Y=>3, n=>"b");
+  $d->wire(x=>8, y=>2, X=>9, Y=>2, n=>"c");
+  $d->wire(x=>8, y=>3, X=>9, Y=>3, n=>"d");
 
-  $d->wire(x=>5, y=>4, X=>6, Y=>4);
+  $d->wire(x=>5, y=>4, X=>6, Y=>4, n=>"CC");
 
-  $d->wire(x=>2, y=>5, X=>3, Y=>5);
-  $d->wire(x=>2, y=>6, X=>3, Y=>6);
-  $d->wire(x=>8, y=>5, X=>9, Y=>5);
-  $d->wire(x=>8, y=>6, X=>9, Y=>6);
+  $d->wire(x=>2, y=>5, X=>3, Y=>5, n=>"A");
+  $d->wire(x=>2, y=>6, X=>3, Y=>6, n=>"B");
+  $d->wire(x=>8, y=>5, X=>9, Y=>5, n=>"C");
+  $d->wire(x=>8, y=>6, X=>9, Y=>6, n=>"D");
 
-  my $c = $d->wire3d(x=>2, y=>4, X=>8, Y=>4, searchDx=>2, searchDy=>1);
-  is_deeply($c, [13,
-    { d => 0, l => 1, X => 4, x => 2, Y => 4, y => 4, n=>'' },
-    { d => 1, l => 1, X => 7, x => 4, Y => 3, y => 4, n=>'' },
-    { d => 1, l => 1, x => 7, X => 8, y => 3, Y => 4, n=>'' }]);
+  my $c = $d->wire3d(x=>2, y=>4, X=>8, Y=>4, n=>'tl', searchDx=>4, searchDy=>2, debug=>1);
+  is_deeply($c->print, <<END);
+Cost: 13
+   x,   y  S      X,   Y  F   L  d  Name
+   2,   4, 1      4,   4, 0   1  0  tl
+   4,   4, 0      7,   3, 0   1  1  tl
+   7,   3, 0      8,   4, 1   1  1  tl
+END
 
-  is_deeply($d->totalLength, 31);
-
+  is_deeply($d->print, <<END);
+Length: 31
+   x,   y  S      X,   Y  F   L  d  Name
+   2,   2, 0      3,   2, 0   1  0  a
+   2,   3, 0      3,   3, 0   1  0  b
+   8,   2, 0      9,   2, 0   1  0  c
+   8,   3, 0      9,   3, 0   1  0  d
+   5,   4, 0      6,   4, 0   1  0  CC
+   2,   5, 0      3,   5, 0   1  0  A
+   2,   6, 0      3,   6, 0   1  0  B
+   8,   5, 0      9,   5, 0   1  0  C
+   8,   6, 0      9,   6, 0   1  0  D
+   2,   4, 1      4,   4, 0   1  0  tl
+   4,   4, 0      7,   3, 0   1  1  tl
+   7,   3, 0      8,   4, 1   1  1  tl
+END
   $d->svg(file=>"wire3d_n");
+exit;
  }
 
 #latest:;
@@ -1333,8 +1375,8 @@ if (1)                                                                          
   my $c = $d->wire3c(x=>1, y=>4, X=>7, Y=>4);
   is_deeply($d->levels, 1);
   is_deeply($c, [12,
-    { d => 0, l => 1, x => 1, X => 4, y => 4, Y => 3, n=>'' },
-    { d => 0, l => 1, X => 7, x => 4, Y => 4, y => 3, n=>'' },
+    { d => 0, l => 1, x => 1, X => 4, y => 4, Y => 3, n=>'', s=>1, f=>0 },
+    { d => 0, l => 1, X => 7, x => 4, Y => 4, y => 3, n=>'', s=>0, f=>1 },
   ]);
 
   is_deeply($d->totalLength, 30);
@@ -1382,47 +1424,11 @@ if (1)                                                                          
 
 #latest:;
 if (1)                                                                          #Tprint
- {my $N = 4; my $G = 2;
-  my $d = new(width=>$N+$G, height=>$N);
-  for my $g(1..$N)
-   {if ($g-1 > 0)
-     {for my $n(1..$N)
-       {$d->wire(x=>0, y=>$n, X=>$g-1, Y=>$n, l=>$g, n=>"left $g");
-       }
-     }
-    if ($g < $N)
-     {for my $n(1..$N)
-       {my $w = $d->wire(x=>$g+$G, y=>$n, X=>$N+$G, Y=>$n, l=>$g, n=>"rght $g");
-       }
-     }
-   }
-  my @c = $d->wire3d(x=>0, y=>4, X=>2*$G, Y=>4, dx=>$G, dy=>1, n=>"triple", noplace=>1);
+ {my $d = new();
+  $d->wire(x=>1, y=>1, X=>2, Y=>2, n=>"aaa");
   is_deeply($d->print, <<END);
-   x,   y      X,   Y   L  d  Name
-   3,   1      6,   1   1  0  rght 1
-   3,   2      6,   2   1  0  rght 1
-   3,   3      6,   3   1  0  rght 1
-   3,   4      6,   4   1  0  rght 1
-   0,   1      1,   1   2  0  left 2
-   0,   2      1,   2   2  0  left 2
-   0,   3      1,   3   2  0  left 2
-   0,   4      1,   4   2  0  left 2
-   4,   1      6,   1   2  0  rght 2
-   4,   2      6,   2   2  0  rght 2
-   4,   3      6,   3   2  0  rght 2
-   4,   4      6,   4   2  0  rght 2
-   0,   1      2,   1   3  0  left 3
-   0,   2      2,   2   3  0  left 3
-   0,   3      2,   3   3  0  left 3
-   0,   4      2,   4   3  0  left 3
-   5,   1      6,   1   3  0  rght 3
-   5,   2      6,   2   3  0  rght 3
-   5,   3      6,   3   3  0  rght 3
-   5,   4      6,   4   3  0  rght 3
-   0,   1      3,   1   4  0  left 4
-   0,   2      3,   2   4  0  left 4
-   0,   3      3,   3   4  0  left 4
-   0,   4      3,   4   4  0  left 4
+   x,   y  S      X,   Y  F   L  d  Name
+   1,   1, 0      2,   2, 0   1  0  aaa
 END
  }
 
