@@ -179,6 +179,13 @@ sub length($$)                                                                  
   scalar $w->p->@*                                                              # The length of the path
  }
 
+sub totalLength($)                                                              # Total length of wires
+ {my ($d) = @_;                                                                 # Diagram
+  my @w = $d->wires->@*;
+  my $l = 0; $l += $d->length($_) for @w;                                       # Add length of each wire
+  $l
+ }
+
 sub findShortestPath($$$$$)                                                     # Find the shortest path between two points in a two dimensional image stepping only from/to adjacent marked cells. The permissible steps are given in two imahes, one for x steps and one for y steps.
  {my ($diagram, $imageX, $imageY, $start, $finish) = @_;                        # Diagram, ImageX{x}{y}, ImageY{x}{y}, start point, finish point
   my %ix = %$imageX; my %iy = %$imageY;                                         # Shorten names
@@ -436,15 +443,21 @@ sub svgLevel($%)                                                                
   $t
  }
 
-sub gds2($$%)                                                                   # Draw the wires using GDS2
- {my ($diagram, $out, %options) = @_;                                           # Wiring diagram, output file, options
+sub gds2($%)                                                                    # Draw the wires using GDS2
+ {my ($diagram, %options) = @_;                                                 # Wiring diagram, output file, options
+  my $gdsBlock  = $options{block};                                              # Existing GDS2 block
+  my $gdsOut    = $options{svg};                                                # Write a newly created gds2 block to this file in the gds sub folder
   my $delta     = 1/4;                                                          # Offset from edge of each gate cell
   my $wireWidth = 1/4;                                                          # Width of a wire
 
-  my $outFile = createEmptyFile(fpe qw(gds), $out, qw(gds));                    # Create output file to make any folders needed
-  my $g = new GDS2(-fileName=>">$outFile");                                     # Draw as Graphics Design System 2
-  $g->printInitLib(-name=>$out);
-  $g->printBgnstr (-name=>$out);
+  my $g = sub                                                                   # Draw as Graphics Design System 2 either inside an existing gds file or create a new one
+   {return $gdsBlock if defined $gdsBlock;                                      # Drawing in an existing block
+    createEmptyFile(my $f = fpe q(gds), $gdsOut, q(gds));                       # Make gds folder
+    my $g = new GDS2(-fileName=>">$f");                                         # Draw as Graphics Design System 2
+    $g->printInitLib(-name=>$gdsOut);
+    $g->printBgnstr (-name=>$gdsOut);
+    $g
+   }->();
 
   my $s  = $wireWidth/2;                                                        # Half width of the wire
   my $t  = 1/2 + $s;                                                            # Center of wire
@@ -495,14 +508,15 @@ sub gds2($$%)                                                                   
       my $L = $l * $Nl;                                                         # Sub level in wiring level
          $L += 1 if $s == 0;
          $L += 3 if $s != 0;
-
       $g->printBoundary(-layer=>$L, -xy=>[$x,$y, $x+$S,$y, $x+$S,$y+$S, $x,$y+$S]); # Fill in cell
       $g->printText(-xy=>[$x+1/8, $y+1/8], -string=>($j+1).".$i");              # Y coordinate
      }
    }
 
-  $g->printEndstr;
-  $g->printEndlib();                                                            # Close the library
+  if (!defined($gdsBlock))                                                      # Close the library if a new ine is being defined
+   {$g->printEndstr;
+    $g->printEndlib;
+   }
  }
 
 #D0
@@ -1220,7 +1234,7 @@ if (1)                                                                          
 .........
 ....S000F
 END
-  $d->gds2("x1");
+  $d->gds2(svg=>q(x1));
  }
 
 #latest:;
@@ -1238,7 +1252,7 @@ if (1)                                                                          
 ....1
 ....F
 END
-  $d->gds2("y1");
+  $d->gds2(svg=>q(y1));
  }
 
 #latest:;
@@ -1256,7 +1270,7 @@ if (1)                                                                          
 ......1..
 ......00F
 END
-  $d->gds2("xy1");
+  $d->gds2(svg=>q(xy1));
  }
 
 #latest:;
@@ -1322,8 +1336,9 @@ S...........F
 1...........1
 0000000000001
 END
-  $d->gds2("xy2");
+  $d->gds2(svg=>q(xy2));
  }
+
 
 &done_testing;
 finish: 1
