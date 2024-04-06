@@ -1201,9 +1201,10 @@ END
  }
 
 #latest:;
-if (1)                                                                          #
+if (1)                                                                          #Tsvg #Tgds2 #Tlength
  {my      $d = new(width=>2, height=>3);
   my $w = $d->wire(x=>1, y=>1, X=>1, Y=>2, n=>'b');
+  is_deeply($d->length($w), 5);
   is_deeply(printPath($w->p), <<END);
 .....
 .....
@@ -1215,7 +1216,9 @@ if (1)                                                                          
 ....1
 ....F
 END
+  $d->svg (svg=>q(y1));
   $d->gds2(svg=>q(y1));
+#svg=>q(y1_1)
  }
 
 #latest:;
@@ -1302,6 +1305,7 @@ END
   $d->svg (svg=>q(xy2));
   $d->gds2(svg=>q(xy2));
 #svg=>q(xy2_1)
+#svg=>q(xy2_2)
  }
 
 
