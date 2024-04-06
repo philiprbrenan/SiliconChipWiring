@@ -371,6 +371,14 @@ sub svg($%)                                                                     
    }
  }
 
+my sub darkSvgColor                                                             # Generate a random dark color in hexadecimal format
+ {my $c = int(rand 3);
+  my @r = map {int(rand 128)} 1..3;
+  return sprintf("#%02X%02X%02X",     $r[0], 128+$r[1], 128+$r[2]) if $c == 0;
+  return sprintf("#%02X%02X%02X", 128+$r[0],     $r[1], 128+$r[2]) if $c == 1;
+         sprintf("#%02X%02X%02X", 128+$r[0], 128+$r[1],     $r[2]);
+ }
+
 sub svgLevel($$%)                                                               #P Draw the bus lines by level.
  {my ($D, $level, %options) = @_;                                               # Wiring diagram, level, options
 
@@ -383,15 +391,16 @@ sub svgLevel($$%)                                                               
 
   for my $w($D->wires->@*)                                                      # Each wire in X
    {my ($l, $p) = @$w{qw(l p)};                                                 # Level and path
+    my $C = darkSvgColor;                                                       # Dark color
     next unless $l == $level;                                                   # Draw the specified level
     for my $i(keys @$p)                                                         # Index path
      {my $q = $$p[$i];                                                          # Element of path
       my ($x, $y) = @$q;
       $x /= 4; $y /= 4;                                                         # Scale
-      my $c = q(blue);
+      my $c = $C;                                                               # Dark color
       $c = 'darkGreen' if $i == 0;
       $c = 'darkRed'   if $i == $#$p;
-      $svg->rect(x=>$x, y=>$y, width=>1/4, height=>1/4, fill=>$c, opacity=>1);
+      $svg->rect(x=>$x, y=>$y, width=>1/4, height=>1/4, fill=>$c, opacity=>1);  # Draw cell
      }
    }
 
