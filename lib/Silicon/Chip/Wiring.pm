@@ -357,87 +357,50 @@ sub printCells($$)                                                              
 
 sub svg($%)                                                                     # Draw the bus lines by level.
  {my ($D, %options) = @_;                                                       # Wiring diagram, options
-return;
-  if (defined($options{level}))                                                 # Draw the specified level
-   {$D->svgLevel(%options);
+
+  if (defined(my $l = $options{level}))                                         # Draw the specified level
+   {$D->svgLevel($l, %options);
    }
   else                                                                          # Draw all levels
    {my $L = $D->levels;
-    my $F = $options{file} // '';                                               # File to write to  minus extension of svg
     my @s;
     for my $l(1..$L)
-     {push @s, $D->svgLevel(%options, level=>$l, $F ? (file=>"${F}_$l") : ());  # Write each level into a separate file
+     {push @s, $D->svgLevel($l, %options);                                      # Write each level into a separate file
      }
     @s
    }
  }
 
-sub svgLevel($%)                                                                #P Draw the bus lines by level.
- {my ($D, %options) = @_;                                                       # Wiring diagram, options
-  defined(my $L = $options{level}) or confess "level";                          # Draw the specified level
+sub svgLevel($$%)                                                               #P Draw the bus lines by level.
+ {my ($D, $level, %options) = @_;                                               # Wiring diagram, level, options
 
   my @defaults = (defaults=>                                                    # Default values
    {stroke_width => 0.5,
     opacity      => 0.75,
    });
 
-  my $xs = "darkRed"; my $ys = "darkBlue";                                      # x,y colors
   my $svg = Svg::Simple::new(@defaults, %options, grid=>debugMask ? 1 : 0);     # Draw each wire via Svg. Grid set to 1 produces a grid that can be helpful debugging layout problems
 
   for my $w($D->wires->@*)                                                      # Each wire in X
-   {my ($x, $y, $X, $Y, $d, $l) = @$w{qw(x y X Y d l)};
-    next if $x == $X or defined($L) &&  $L != $l;                               # Must occupy space in this dimension and optionally be on the specified level
-    if ($d)
-     {if ($x > $X)
-       {$svg->line(x1=>$X+1/4,   y1=>$Y+1/2, x2=>$x+3/4, y2=>$Y+1/2, stroke=>$xs);
-       }
-      else
-       {$svg->line(x1=>$x+1/4,   y1=>$Y+1/2, x2=>$X+3/4, y2=>$Y+1/2, stroke=>$xs);
-       }
-     }
-    else
-     {if ($x > $X)
-       {$svg->line(x1=>$X+1/4,   y1=>$y+1/2, x2=>$x+3/4, y2=>$y+1/2, stroke=>$xs);
-       }
-      else
-       {$svg->line(x1=>$x+1/4,   y1=>$y+1/2, x2=>$X+3/4, y2=>$y+1/2, stroke=>$xs);
-       }
+   {my ($l, $p) = @$w{qw(l p)};                                                 # Level and path
+    next unless $l == $level;                                                   # Draw the specified level
+    for my $i(keys @$p)                                                         # Index path
+     {my $q = $$p[$i];                                                          # Element of path
+      my ($x, $y) = @$q;
+      $x /= 4; $y /= 4;                                                         # Scale
+      my $c = q(blue);
+      $c = 'darkGreen' if $i == 0;
+      $c = 'darkRed'   if $i == $#$p;
+      $svg->rect(x=>$x, y=>$y, width=>1/4, height=>1/4, fill=>$c, opacity=>1);
      }
    }
 
-  for my $w($D->wires->@*)                                                      # Each wire in Y
-   {my ($x, $y, $X, $Y, $d, $l) = @$w{qw(x y X Y d l)};
-    next if $y == $Y or defined($L) &&  $L != $l;                               # Must occupy space in this dimension and optionally be on the specified level
-    if ($d)
-     {if ($y < $Y)
-       {$svg->line(x1=>$x+1/2, y1=>$y+1/4,   x2=>$x+1/2, y2=>$Y+3/4,   stroke=>$ys);
-       }
-     elsif ($y > $Y)                                                            # Avoid drawing Y wires of length 1
-       {$svg->line(x1=>$x+1/2, y1=>$Y+1/4,   x2=>$x+1/2, y2=>$y+3/4,   stroke=>$ys);
-       }
-     }
-    else
-     {if ($y > $Y)
-       {$svg->line(x1=>$X+1/2, y1=>$Y+1/4,   x2=>$X+1/2, y2=>$y+3/4,   stroke=>$ys);
-       }
-      elsif ($y < $Y)                                                           # Avoid drawing Y wires of length 1
-       {$svg->line(x1=>$X+1/2, y1=>$y+1/4,   x2=>$X+1/2, y2=>$Y+3/4,   stroke=>$ys);
-       }
-     }
-   }
+  my $t = $svg->print(width=>$D->width+1, height=>$D->height+1);                # Text of svg
 
-  for my $w($D->wires->@*)                                                      # Show start and end points of each wire
-   {my ($x, $y, $X, $Y, $d, $l) = @$w{qw(x y X Y d l)};
-    next if defined($L) &&  $L != $l;                                           # Must occupy space in this dimension and optionally be on the specified level
-    $svg->rect(x=>$x+1/4, y=>$y+1/4, width=>1/2, height=>1/2, fill=>"green",  opacity=>1);
-    $svg->rect(x=>$X+1/4, y=>$Y+1/4, width=>1/2, height=>1/2, fill=>"yellow", opacity=>1);
-   }
-
-  my $t = $svg->print(width=>$D->width, height=>$D->height);                          # Text of svg
-
-  if (my $f = $options{file})                                                   # Optionally write to an svg file
-   {confess "Wiring file already exists: $f\n" if -e $f;
-    owf(fpe(q(svg), $f, q(svg)), $t)
+  if (my $f = $options{svg})                                                    # Optionally write to an svg file
+   {my $F = fpe q(svg), "${f}_$level", q(svg);                                  # Write each level into a separate file
+    confess "Wiring file already exists: $F\n" if -e $F;
+    owf($F, $t)
    }
 
   $t
@@ -1336,6 +1299,7 @@ S...........F
 1...........1
 0000000000001
 END
+  $d->svg (svg=>q(xy2));
   $d->gds2(svg=>q(xy2));
  }
 
