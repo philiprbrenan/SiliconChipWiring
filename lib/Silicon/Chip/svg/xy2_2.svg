@@ -3,21 +3,21 @@
 <svg height="100%" viewBox="0 0 5 4" width="100%" background-color="none" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 
 <rect fill="darkGreen" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="0" y="0"/>
-<rect fill="blue" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="0" y="0.25"/>
-<rect fill="blue" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="0" y="0.5"/>
-<rect fill="blue" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="0.25" y="0.5"/>
-<rect fill="blue" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="0.5" y="0.5"/>
-<rect fill="blue" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="0.75" y="0.5"/>
-<rect fill="blue" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="1" y="0.5"/>
-<rect fill="blue" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="1.25" y="0.5"/>
-<rect fill="blue" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="1.5" y="0.5"/>
-<rect fill="blue" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="1.75" y="0.5"/>
-<rect fill="blue" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="2" y="0.5"/>
-<rect fill="blue" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="2.25" y="0.5"/>
-<rect fill="blue" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="2.5" y="0.5"/>
-<rect fill="blue" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="2.75" y="0.5"/>
-<rect fill="blue" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="3" y="0.5"/>
-<rect fill="blue" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="3" y="0.25"/>
+<rect fill="#C7F97F" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="0" y="0.25"/>
+<rect fill="#C7F97F" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="0" y="0.5"/>
+<rect fill="#C7F97F" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="0.25" y="0.5"/>
+<rect fill="#C7F97F" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="0.5" y="0.5"/>
+<rect fill="#C7F97F" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="0.75" y="0.5"/>
+<rect fill="#C7F97F" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="1" y="0.5"/>
+<rect fill="#C7F97F" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="1.25" y="0.5"/>
+<rect fill="#C7F97F" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="1.5" y="0.5"/>
+<rect fill="#C7F97F" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="1.75" y="0.5"/>
+<rect fill="#C7F97F" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="2" y="0.5"/>
+<rect fill="#C7F97F" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="2.25" y="0.5"/>
+<rect fill="#C7F97F" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="2.5" y="0.5"/>
+<rect fill="#C7F97F" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="2.75" y="0.5"/>
+<rect fill="#C7F97F" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="3" y="0.5"/>
+<rect fill="#C7F97F" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="3" y="0.25"/>
 <rect fill="darkRed" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="3" y="0"/>
 <line dominant-baseline="hanging" font-size="0.25" opacity="0.2" stroke="black" stroke-width="0.015625" text-anchor="start" x1="0" x2="0" y1="0" y2="4"/>
 <text dominant-baseline="hanging" fill="black" font-size="0.25" opacity="1" stroke="black" stroke-width="0.015625" text-anchor="start" x="0" y="0">0</text>
