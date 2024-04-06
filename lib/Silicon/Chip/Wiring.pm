@@ -1225,8 +1225,8 @@ END
 #latest:;
 if (1)                                                                          #TprintPath
  {my      $d = new(width=>3, height=>3);
-  my $w = $d->wire(x=>1, y=>1, X=>2, Y=>2, n=>'c');
-  is_deeply(printPath($w->p), <<END);
+  my $a = $d->wire(x=>1, y=>1, X=>2, Y=>2, n=>'a');
+  is_deeply(printPath($a->p), <<END);
 .........
 .........
 .........
@@ -1238,6 +1238,9 @@ if (1)                                                                          
 ......00F
 END
   $d->gds2(svg=>q(xy1));
+  $d->svg (svg=>q(xy1));
+#svg=>q(xy1_1)
+#svg=>q(xy1_2)
  }
 
 #latest:;
