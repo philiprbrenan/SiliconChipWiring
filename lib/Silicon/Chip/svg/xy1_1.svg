@@ -3,13 +3,13 @@
 <svg height="100%" viewBox="0 0 4 4" width="100%" background-color="none" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 
 <rect fill="darkGreen" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="1" y="1"/>
-<rect fill="blue" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="1.25" y="1"/>
-<rect fill="blue" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="1.5" y="1"/>
-<rect fill="blue" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="1.5" y="1.25"/>
-<rect fill="blue" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="1.5" y="1.5"/>
-<rect fill="blue" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="1.5" y="1.75"/>
-<rect fill="blue" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="1.5" y="2"/>
-<rect fill="blue" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="1.75" y="2"/>
+<rect fill="#A001ED" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="1.25" y="1"/>
+<rect fill="#A001ED" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="1.5" y="1"/>
+<rect fill="#A001ED" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="1.5" y="1.25"/>
+<rect fill="#A001ED" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="1.5" y="1.5"/>
+<rect fill="#A001ED" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="1.5" y="1.75"/>
+<rect fill="#A001ED" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="1.5" y="2"/>
+<rect fill="#A001ED" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="1.75" y="2"/>
 <rect fill="darkRed" height="0.25" opacity="1" stroke-width="0.5" width="0.25" x="2" y="2"/>
 <line dominant-baseline="hanging" font-size="0.25" opacity="0.2" stroke="black" stroke-width="0.015625" text-anchor="start" x1="0" x2="0" y1="0" y2="4"/>
 <text dominant-baseline="hanging" fill="black" font-size="0.25" opacity="1" stroke="black" stroke-width="0.015625" text-anchor="start" x="0" y="0">0</text>
