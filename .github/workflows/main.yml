@@ -1,4 +1,4 @@
-# Test 2024-04-06 at 06:02:02
+# Test 2024-04-06 at 06:03:35
 
 name: Test
 
@@ -44,7 +44,7 @@ jobs:
         tree
 
     - name: Cpan
-      run:  sudo cpan install -T Data::Dump GDS2
+      run:  sudo cpan install -T Data::Dump GDS2 Digest::SHA1
 
     - name: Test Silicon Wiring
       run:
