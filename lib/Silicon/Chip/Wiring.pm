@@ -1190,7 +1190,7 @@ if (1)                                                                          
 if (1)                                                                          #TnumberOfWires
  {my      $d = new(width=>3, height=>2);
   my $w = $d->wire(x=>1, y=>1, X=>2, Y=>1, n=>'a');
-  is_deeply($d->numberOfWires, 65);
+  is_deeply($d->numberOfWires, 1);
   is_deeply(printPath($w->p), <<END);
 .........
 .........
@@ -1241,7 +1241,7 @@ END
  }
 
 #latest:;
-if (1)                                                                          #Tnew #Twire
+if (1)                                                                          #Tnew #Twire #TtotalLength
  {my      $d = new(width=>4, height=>3);
   my $a = $d->wire(x=>0, y=>1, X=>2, Y=>1, n=>'a');
   my $b = $d->wire(x=>1, y=>0, X=>1, Y=>2, n=>'b');
@@ -1251,6 +1251,7 @@ if (1)                                                                          
   is_deeply($d->levels, 1);
   my $f = $d->wire(x=>0, y=>0, X=>3, Y=>0, n=>'f');
   is_deeply($d->levels, 2);
+  is_deeply($d->totalLength, 65);
   is_deeply($d->levels, 2);
   #say STDERR printPath($f->p);
 
