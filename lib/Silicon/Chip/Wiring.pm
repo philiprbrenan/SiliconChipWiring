@@ -297,7 +297,7 @@ sub printPath($)                                                                
   join "\n", @s, '';
  }
 
-sub printHash($)                                                                # Print a two dimensional hash
+sub printHash($)                                                                #P Print a two dimensional hash
  {my ($x) = @_;                                                                 # Two dimensional hash
   my %x = $x->%*;
 
@@ -1238,6 +1238,20 @@ if (1)                                                                          
 ......00F
 END
   $d->gds2(svg=>q(xy1));
+ }
+
+#latest:;
+if (1)                                                                          #Tprint #TprintWire
+ {my      $d = new(width=>3, height=>3);
+  my $a = $d->wire(x=>1, y=>1, X=>2, Y=>1, n=>'a');
+  my $b = $d->wire(x=>1, y=>2, X=>2, Y=>2, n=>'b');
+  is_deeply($d->print, <<END);
+Length: 10
+   x,   y      X,   Y   L  Name    Path
+   1,   1      2,   1   1  a       4,4,0  5,4,0  6,4,0  7,4,0  8,4
+   1,   2      2,   2   1  b       4,8,0  5,8,0  6,8,0  7,8,0  8,8
+END
+  is_deeply($d->printWire($a), "   1,   1      2,   1   1  a       4,4,0  5,4,0  6,4,0  7,4,0  8,4");
  }
 
 #latest:;
