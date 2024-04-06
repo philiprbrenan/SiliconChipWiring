@@ -1,4 +1,4 @@
-# Test 2024-04-06 at 06:09:35
+# Test 2024-04-06 at 06:16:23
 
 name: Test
 
@@ -51,9 +51,11 @@ jobs:
         perl -Idtt/lib -Isvg/lib -Imicl/lib  lib/Silicon/Chip/Wiring.pm
 
     - name: Upload images
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         tree
-        perl -Idtt/lib -Igh/lib -MGitHub::Crud -e"&GitHub::Crud::writeFolderUsingSavedToken(@ARGV)" -- philiprbrenan SiliconChipWiring lib/Silicon/Chip/svg/ svg/ ${{ secrets.GITHUB_TOKEN }}
+        perl -Idtt/lib -Igh/lib -MGitHub::Crud -e"&GitHub::Crud::writeFolderUsingSavedToken(@ARGV)" -- philiprbrenan SiliconChipWiring lib/Silicon/Chip/svg/ svg/
 
     - uses: actions/upload-artifact@v4
       with:
