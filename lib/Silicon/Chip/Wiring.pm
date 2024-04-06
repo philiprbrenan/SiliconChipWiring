@@ -1301,6 +1301,7 @@ S...........F
 END
   $d->svg (svg=>q(xy2));
   $d->gds2(svg=>q(xy2));
+#svg=>q(xy2_1)
  }
 
 
