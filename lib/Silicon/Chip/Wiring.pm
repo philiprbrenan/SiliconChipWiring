@@ -56,7 +56,7 @@ sub new(%)                                                                      
   $d
  }
 
-sub newLevel($%)                                                                # Make a new level and return its number
+sub newLevel($%)                                                                #P Make a new level and return its number
  {my ($diagram, %options) = @_;                                                 # Diagram, Options
 
   my ($w, $h) = @$diagram{qw(width height)};
@@ -349,7 +349,7 @@ my sub printOverlays($$)                                                        
   $s
  }
 
-sub printCells($$)                                                              # Print the cells and sub cells in a diagram
+sub printCells($$)                                                              #P Print the cells and sub cells in a diagram
  {my ($diagram, $level) = @_;                                                   # Diagram
 
   printOverlays($diagram->levelX->{$level}, $diagram->levelY->{$level});
@@ -1187,9 +1187,10 @@ if (1)                                                                          
  }
 
 #latest:;
-if (1)                                                                          #
+if (1)                                                                          #TnumberOfWires
  {my      $d = new(width=>3, height=>2);
   my $w = $d->wire(x=>1, y=>1, X=>2, Y=>1, n=>'a');
+  is_deeply($d->numberOfWires($w), 1);
   is_deeply(printPath($w->p), <<END);
 .........
 .........
@@ -1222,7 +1223,7 @@ END
  }
 
 #latest:;
-if (1)                                                                          #
+if (1)                                                                          #TprintPath
  {my      $d = new(width=>3, height=>3);
   my $w = $d->wire(x=>1, y=>1, X=>2, Y=>2, n=>'c');
   is_deeply(printPath($w->p), <<END);
