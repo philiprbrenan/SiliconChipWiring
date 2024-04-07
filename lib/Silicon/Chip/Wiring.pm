@@ -379,6 +379,19 @@ my sub darkSvgColor                                                             
          sprintf("#%02X%02X%02X", 128+$r[0], 128+$r[1],     $r[2]);
  }
 
+my sub collapsePath($)                                                          # Collapse a path to reduce the number of svg commands and thus the size of the svg files
+ {my ($p) = @_;                                                                 # Path to collapse
+  my @c = [$$p[0], $$p[0]];                                                     # Collapse the path to reduce the number of svg commands
+  for my $i(1..$#$p)                                                            # Index path
+   {my $q = $$p[$i];                                                            # Element of path
+    my $d = $c[-1][0][2];                                                       # Direction of last element
+    my $D = $$q[2];                                                             # Direction of this element
+    $c[-1][1] = $q;                                                             # Extend
+    push @c, [$q, $q] unless defined($D) and $d == $D                           # Change direction if necessary
+   }
+  @c                                                                            # Collapsed path
+ }
+
 sub svgLevel($$%)                                                               #P Draw the bus lines by level.
  {my ($D, $level, %options) = @_;                                               # Wiring diagram, level, options
 
@@ -391,17 +404,26 @@ sub svgLevel($$%)                                                               
 
   for my $w($D->wires->@*)                                                      # Each wire in X
    {my ($l, $p) = @$w{qw(l p)};                                                 # Level and path
-    my $C = darkSvgColor;                                                       # Dark color
     next unless $l == $level;                                                   # Draw the specified level
-    for my $i(keys @$p)                                                         # Index path
-     {my $q = $$p[$i];                                                          # Element of path
-      my ($x, $y) = @$q;
-      $x /= 4; $y /= 4;                                                         # Scale
-      my $c = $C;                                                               # Dark color
-      $c = 'darkGreen' if $i == 0;
-      $c = 'darkRed'   if $i == $#$p;
-      $svg->rect(x=>$x, y=>$y, width=>1/4, height=>1/4, fill=>$c, opacity=>1);  # Draw cell
+
+    my @c = collapsePath($p);                                                   # Collapse the path to reduce the number of svg commands
+    my $C = darkSvgColor;                                                       # Dark color
+
+    for my $i(keys @c)                                                          # Index collapsed path
+     {my $q = $c[$i];                                                           # Element of path
+      my ($c, $d) = @$q;                                                        # Coordinates, dimensions
+      my ($x, $y) = @$c;                                                        # Coordinates at start
+      my ($X, $Y) = @$d;                                                        # Coordinates at end
+      $X++; $Y++;
+      $x /= 4; $y /= 4; $X /= 4; $Y /= 4;                                       # Scale
+      $svg->path(d=>"M $x $y L $X $y L $X $Y L $x $Y Z", fill=>$C);             # Rectangle as a path matching the gds2 implementation
      }
+     my sub cd($$)                                                              # Coordinates of a start or end point
+      {my ($i, $j) = @_;                                                        # Index for point, coordinate in point
+       $$p[$i][$j] / 4
+      }
+     $svg->rect(x=>cd( 0, 0), y=>cd( 0, 1), width=>1/4, height=>1/4, fill=>"darkGreen", opacity=>1);  # Draw start of wire
+     $svg->rect(x=>cd(-1, 0), y=>cd(-1, 1), width=>1/4, height=>1/4, fill=>"darkRed",   opacity=>1);  # Draw start of wire
    }
 
   my $t = $svg->print(width=>$D->width+1, height=>$D->height+1);                # Text of svg
@@ -461,7 +483,7 @@ sub gds2($%)                                                                    
    {$g->printText(-xy=>[0, $y+$wireWidth*1.2], -string=>"$y", -font=>3);        # Y coordinate
    }
 
-  my sub via($$$)                                                               # Draw a vertical connector
+  my sub via($$$)                                                               # Draw a vertical connector. The vertical connectors are known as vias and transmit the gate inputs and outputs to the various wiring layers.
    {my ($x, $y, $l) = @_;                                                       # Options
     $g->printBoundary(-layer=>$l*$Nl+2, -xy=>[$x-$s,$y-$s, $x+$s,$y-$s, $x+$s,$y+$s, $x-$s,$y+$s]); # Vertical connector
    }
@@ -469,18 +491,24 @@ sub gds2($%)                                                                    
   #say STDERR wireHeader;
   for my $j(keys @w)                                                            # Layout each wire
    {my $w = $w[$j];
-    my ($x, $y, $X, $Y, $l, $p) = @$w{qw(x y X Y l p)};
-    #say STDERR $diagram->printWire($w);
+    my ($l, $p) = @$w{qw(l p)};
+    my @c = collapsePath($p);                                                   # Collapse the path
 
-    for my $i(1..$#$p-1)                                                        # All along the path
-     {my $q = $$p[$i];                                                          # All along the path
-      my ($x, $y, $s) = @$q;                                                    # Position, direction
-      $x /= 4; $y /= 4;                                                         # Normalize positions of sub cells
+    for my $i(keys @c)                                                          # Index collapsed path
+     {my $q = $c[$i];                                                           # Element of path
+      my ($c, $d) = @$q;                                                        # Coordinates, dimensions
+      my ($x, $y) = @$c;                                                        # Coordinates
+      my ($X, $Y) = @$d;                                                        # Dimensions
+      $X++; $Y++;
+      $x /= 4; $y /= 4; $X /= 4; $Y /= 4;                                       # Scale
 
       my $L = $l * $Nl;                                                         # Sub level in wiring level
          $L += 1 if $s == 0;
          $L += 3 if $s != 0;
-      $g->printBoundary(-layer=>$L, -xy=>[$x,$y, $x+$S,$y, $x+$S,$y+$S, $x,$y+$S]); # Fill in cell
+      my $I = $L + 2;                                                           # The insulation layer between the x and y crossbars.  We connect the x cross bars to the y cross bars through this later everytime we change direction in a wiring level.
+
+      $g->printBoundary(-layer=>$L, -xy=>[$x,$y, $X,$y, $X,$Y, $x,$Y]);         # Fill in cell
+      #$g->printBoundary(-layer=>$I, -xy=>[$X,$Y, $X+1/4,$Y, $X+1/4,$Y+1/4, $X,$Y+1/4]) unless $i == $#c; # Step though insulation layer to connect the X crossbar to the Y crossbar.
       $g->printText(-xy=>[$x+1/8, $y+1/8], -string=>($j+1).".$i");              # Y coordinate
      }
    }
@@ -1337,6 +1365,27 @@ END
 #svg=>q(xy2_2)
  }
 
+#latest:;
+if (1)                                                                          #TcollapsePath
+ {my @p = collapsePath([
+  [0, 4, 1],
+  [0, 3, 1],
+  [0, 2, 0],
+  [1, 2, 0],
+  [2, 2, 0],
+  [3, 2, 0],
+  [4, 2, 0],
+  [5, 2, 0],
+  [6, 2, 0],
+  [7, 2, 0],
+  [8, 2, 1],
+  [8, 3, 1],
+  [8, 4]]);
+
+  is_deeply($p[0], [[0, 4, 1], [0, 2, 0]]);
+  is_deeply($p[1], [[0, 2, 0], [8, 2, 1]]);
+  is_deeply($p[2], [[8, 2, 1], [8, 4]]);
+ }
 
 &done_testing;
 finish: 1
