@@ -379,17 +379,36 @@ my sub darkSvgColor                                                             
          sprintf("#%02X%02X%02X", 128+$r[0], 128+$r[1],     $r[2]);
  }
 
+my sub distance($$$$)                                                           # Manhattan distance between two points
+ {my ($x, $y, $X, $Y) = @_;                                                     # Start x, start y, end x, end y
+  abs($X - $x) + abs($Y - $y)
+ }
+
 my sub collapsePath($)                                                          # Collapse a path to reduce the number of svg commands and thus the size of the svg files
  {my ($p) = @_;                                                                 # Path to collapse
-  my @c = [$$p[0], $$p[0]];                                                     # Collapse the path to reduce the number of svg commands
+           # Start   # Finish  # Direction
+  my @c = [$$p[0],   $$p[0],   0];                                              # Collapse the path to reduce the number of svg commands.
   for my $i(1..$#$p)                                                            # Index path
-   {my $q = $$p[$i];                                                            # Element of path
-    my $d = $c[-1][0][2];                                                       # Direction of last element
-    my $D = $$q[2];                                                             # Direction of this element
-    $c[-1][1] = $q;                                                             # Extend
-    push @c, [$q, $q] unless defined($D) and $d == $D                           # Change direction if necessary
+   {my @q = $$p[$i]->@*;                                                        # Current element of path
+    my @o = $c[-1][0]->@*;                                                      # Start of previous extension
+    if ($o[0] != $q[0] and $o[1] != $q[1])                                      # New direction
+     {push @c, [[@q], [@q]];
+     }
+    else
+     {$c[-1][1] = [@q];
+     }
    }
-  @c                                                                            # Collapsed path
+
+  if (@c == 1) {$c[0][2] = $c[0][0][2]}                                         # Straight line so direction is the same as the step away from the via
+  else                                                                          # At least three segments
+   {for my $i(1..@c-2)                                                          # Index path
+     {$c[$i][2] = $c[$i][0][0] != $c[$i][1][0]? 0 : 1;                          # Direction of change
+     }
+    $c[ 0][2] = $c[1][2];                                                       # Step from first via is the same as first cross bar
+    $c[-1][2] = $c[-2][2];                                                      # Step to last    via is the same as last  cross bar
+   }
+
+  @c                                                                            # Collapsed path [[start x, start y], [finish x, finish y], level]
  }
 
 sub svgLevel($$%)                                                               #P Draw the bus lines by level.
@@ -398,6 +417,8 @@ sub svgLevel($$%)                                                               
   my @defaults = (defaults=>                                                    # Default values
    {stroke_width => 0.5,
     opacity      => 0.75,
+    stroke       => "transparent",
+    fill         => "transparent",
    });
 
   my $svg = Svg::Simple::new(@defaults, %options, grid=>debugMask ? 1 : 0);     # Draw each wire via Svg. Grid set to 1 produces a grid that can be helpful debugging layout problems
@@ -414,16 +435,23 @@ sub svgLevel($$%)                                                               
       my ($c, $d) = @$q;                                                        # Coordinates, dimensions
       my ($x, $y) = @$c;                                                        # Coordinates at start
       my ($X, $Y) = @$d;                                                        # Coordinates at end
-      $X++; $Y++;
+      $x < $X ? $X++ : ++$x;
+      $y < $Y ? $Y++ : ++$y;
       $x /= 4; $y /= 4; $X /= 4; $Y /= 4;                                       # Scale
       $svg->path(d=>"M $x $y L $X $y L $X $Y L $x $Y Z", fill=>$C);             # Rectangle as a path matching the gds2 implementation
+      if ($i > 0 and $c[$i][2] != $c[$i-1][2])                                  # Change of level due to change of direction
+       {my ($x, $y) = $c[$i-1][1]->@*;                                          # Coordinates of end of previous section
+        my ($cx, $cy) = (($x+1/3)/4, ($y+1/3)/4);                               # Start of last sub cell of previous segment
+        my ($dx, $dy) = (($x+2/3)/4, ($y+2/3)/4);                               # Far edge of last sub cell of previous segment
+        $svg->path(d=>"M $cx $cy L $dx $cy L $dx $dy L $cx $dy Z", stroke=>"black", stroke_width=>1/48); # Show change of level
+       }
      }
      my sub cd($$)                                                              # Coordinates of a start or end point
       {my ($i, $j) = @_;                                                        # Index for point, coordinate in point
        $$p[$i][$j] / 4
       }
-     $svg->rect(x=>cd( 0, 0), y=>cd( 0, 1), width=>1/4, height=>1/4, fill=>"darkGreen", opacity=>1);  # Draw start of wire
-     $svg->rect(x=>cd(-1, 0), y=>cd(-1, 1), width=>1/4, height=>1/4, fill=>"darkRed",   opacity=>1);  # Draw start of wire
+     $svg->rect(x=>cd( 0, 0), y=>cd( 0, 1), width=>1/4, height=>1/4, fill=>"darkGreen");  # Draw start of wire
+     $svg->rect(x=>cd(-1, 0), y=>cd(-1, 1), width=>1/4, height=>1/4, fill=>"darkRed");    # Draw end   of wire
    }
 
   my $t = $svg->print(width=>$D->width+1, height=>$D->height+1);                # Text of svg
@@ -497,18 +525,19 @@ sub gds2($%)                                                                    
     for my $i(keys @c)                                                          # Index collapsed path
      {my $q = $c[$i];                                                           # Element of path
       my ($c, $d) = @$q;                                                        # Coordinates, dimensions
-      my ($x, $y) = @$c;                                                        # Coordinates
-      my ($X, $Y) = @$d;                                                        # Dimensions
-      $X++; $Y++;
+      my ($x, $y) = @$c;                                                        # Coordinates at start
+      my ($X, $Y) = @$d;                                                        # Coordinates at end
+      $x < $X ? $X++ : ++$x;
+      $y < $Y ? $Y++ : ++$y;
       $x /= 4; $y /= 4; $X /= 4; $Y /= 4;                                       # Scale
 
-      my $L = $l * $Nl;                                                         # Sub level in wiring level
-         $L += 1 if $s == 0;
-         $L += 3 if $s != 0;
-      my $I = $L + 2;                                                           # The insulation layer between the x and y crossbars.  We connect the x cross bars to the y cross bars through this later everytime we change direction in a wiring level.
+      my $L = $l * $Nl + ($$q[2] ? 2 : 0);                                      # Sub level in wiring level
+      my $I = $l * $Nl + 1;                                                     # The insulation layer between the x and y crossbars.  We connect the x cross bars to the y cross bars through this later everytime we change direction in a wiring level.
 
       $g->printBoundary(-layer=>$L, -xy=>[$x,$y, $X,$y, $X,$Y, $x,$Y]);         # Fill in cell
-      #$g->printBoundary(-layer=>$I, -xy=>[$X,$Y, $X+1/4,$Y, $X+1/4,$Y+1/4, $X,$Y+1/4]) unless $i == $#c; # Step though insulation layer to connect the X crossbar to the Y crossbar.
+      if ($i > 0 and $c[$i][2] != $c[$i-1][2])                                  # Change of level
+       {$g->printBoundary(-layer=>$I, -xy=>[$X,$Y, $X-1/4,$Y, $X-1/4,$Y-1/4, $X,$Y-1/4]); # Step though insulation layer to connect the X crossbar to the Y crossbar.
+       }
       $g->printText(-xy=>[$x+1/8, $y+1/8], -string=>($j+1).".$i");              # Y coordinate
      }
    }
@@ -1294,20 +1323,20 @@ END
   is_deeply($d->printWire($a), "   1,   1      2,   1   1  a       4,4,0  5,4,0  6,4,0  7,4,0  8,4");
  }
 
-#latest:;
+latest:;
 if (1)                                                                          #Tnew #Twire #TtotalLength
- {my      $d = new(width=>4, height=>3);
+ {my      $d = new(width=>5, height=>4);
   my $a = $d->wire(x=>0, y=>1, X=>2, Y=>1, n=>'a');
   my $b = $d->wire(x=>1, y=>0, X=>1, Y=>2, n=>'b');
   my $c = $d->wire(x=>2, y=>0, X=>2, Y=>2, n=>'c');
   my $e = $d->wire(x=>0, y=>2, X=>1, Y=>1, n=>'e');
+  my $f = $d->wire(x=>0, y=>3, X=>4, Y=>0, n=>'f');
 
   is_deeply($d->levels, 1);
-  my $f = $d->wire(x=>0, y=>0, X=>3, Y=>0, n=>'f');
+  my $g = $d->wire(x=>0, y=>0, X=>3, Y=>0, n=>'g');
   is_deeply($d->levels, 2);
-  is_deeply($d->totalLength, 65);
+  is_deeply($d->totalLength, 94);
   is_deeply($d->levels, 2);
-  #say STDERR printPath($f->p);
 
 
   is_deeply(printPath($a->p), <<END);
@@ -1355,6 +1384,22 @@ S....
 END
 
   is_deeply(printPath($f->p), <<END);
+..............00F
+..............1..
+..............1..
+..............1..
+..............1..
+..............1..
+..............1..
+..............1..
+..............1..
+..............1..
+000000000000001..
+1................
+S................
+END
+
+  is_deeply(printPath($g->p), <<END);
 S...........F
 1...........1
 0000000000001
@@ -1364,6 +1409,14 @@ END
 #svg=>q(xy2_1)
 #svg=>q(xy2_2)
  }
+
+#    Original   Collapse
+#    012345678  012345678
+#  0
+#  1
+#  2 000000001  0.......1
+#  3 1       1  .       .
+#  4 1       1  0       1
 
 #latest:;
 if (1)                                                                          #TcollapsePath
@@ -1381,10 +1434,50 @@ if (1)                                                                          
   [8, 2, 1],
   [8, 3, 1],
   [8, 4]]);
+  is_deeply([@p], [
+   [[0, 4, 1], [0, 2, 0], 0],
+   [[1, 2, 0], [8, 2, 1], 0],
+   [[8, 3, 1], [8, 4],    0]]);
+ }
 
-  is_deeply($p[0], [[0, 4, 1], [0, 2, 0]]);
-  is_deeply($p[1], [[0, 2, 0], [8, 2, 1]]);
-  is_deeply($p[2], [[8, 2, 1], [8, 4]]);
+#latest:;
+if (1)
+ {my @p = collapsePath([
+  [0, 12, 1],
+  [0, 11, 1],
+  [0, 10, 0],
+  [1, 10, 0],
+  [2, 10, 0],
+  [3, 10, 0],
+  [4, 10, 0],
+  [5, 10, 0],
+  [6, 10, 0],
+  [7, 10, 0],
+  [8, 10, 0],
+  [9, 10, 0],
+  [10, 10, 0],
+  [11, 10, 0],
+  [12, 10, 0],
+  [13, 10, 0],
+  [14, 10, 1],
+  [14, 9, 1],
+  [14, 8, 1],
+  [14, 7, 1],
+  [14, 6, 1],
+  [14, 5, 1],
+  [14, 4, 1],
+  [14, 3, 1],
+  [14, 2, 1],
+  [14, 1, 1],
+  [14, 0, 0],
+  [15, 0, 0],
+  [16, 0]]);
+  is_deeply([@p], [
+  [[0, 12, 1], [ 0, 10, 0], 0],
+  [[1, 10, 0], [14, 10, 1], 0],
+  [[14, 9, 1], [14,  0, 0], 1],
+  [[15, 0, 0], [16,  0],    1],
+   ]);
  }
 
 &done_testing;
