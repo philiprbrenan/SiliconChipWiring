@@ -1,4 +1,4 @@
-# Test 2024-04-08 at 05:52:20
+# Test 2024-04-08 at 05:55:04
 
 name: Test
 
@@ -59,6 +59,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        mkdir png/
         perl -Idtt/lib -Igh/lib convertImages.pl
         #perl -Idtt/lib -Igh/lib -MGitHub::Crud -e"&GitHub::Crud::writeFolderUsingSavedToken(@ARGV)" -- philiprbrenan SiliconChipWiring lib/Silicon/Chip/svg/ svg/
         #perl -Idtt/lib -Igh/lib -MGitHub::Crud -e"&GitHub::Crud::writeFolderUsingSavedToken(@ARGV)" -- philiprbrenan SiliconChipWiring lib/Silicon/Chip/gds/ gds/
