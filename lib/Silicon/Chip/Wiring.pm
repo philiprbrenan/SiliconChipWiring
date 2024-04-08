@@ -625,23 +625,24 @@ New wiring diagram.
 B<Example:>
 
 
-  if (1)
-
-   {my      $d = new(width=>5, height=>4);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+  if (1)                                                                            
+  
+   {my      $d = new(width=>4, height=>3);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
     my $a = $d->wire(x=>0, y=>1, X=>2, Y=>1, n=>'a');
     my $b = $d->wire(x=>1, y=>0, X=>1, Y=>2, n=>'b');
     my $c = $d->wire(x=>2, y=>0, X=>2, Y=>2, n=>'c');
     my $e = $d->wire(x=>0, y=>2, X=>1, Y=>1, n=>'e');
     my $f = $d->wire(x=>0, y=>3, X=>4, Y=>0, n=>'f');
-
+    my $F = $d->wire(x=>1, y=>3, X=>3, Y=>0, n=>'F');
+  
     is_deeply($d->levels, 1);
     my $g = $d->wire(x=>0, y=>0, X=>3, Y=>0, n=>'g');
     is_deeply($d->levels, 2);
-    is_deeply($d->totalLength, 94);
+    is_deeply($d->totalLength, 119);
     is_deeply($d->levels, 2);
-
-
+  
+  
     is_deeply(printPath($a->p), <<END);
   .........
   .........
@@ -649,7 +650,7 @@ B<Example:>
   1.......1
   S.......F
   END
-
+  
     is_deeply(printPath($b->p), <<END);
   ..10S
   ..1..
@@ -661,7 +662,7 @@ B<Example:>
   ..1..
   ..00F
   END
-
+  
     is_deeply(printPath($c->p), <<END);
   ......10S
   ......1..
@@ -673,7 +674,7 @@ B<Example:>
   ......1..
   ......00F
   END
-
+  
     is_deeply(printPath($e->p), <<END);
   .....
   .....
@@ -685,7 +686,7 @@ B<Example:>
   1....
   S....
   END
-
+  
     is_deeply(printPath($f->p), <<END);
   ..............00F
   ..............1..
@@ -701,7 +702,26 @@ B<Example:>
   1................
   S................
   END
-
+  
+    is_deeply(printPath($F->p), <<END);
+  ..........00F
+  ..........1..
+  ..........1..
+  ..........1..
+  ..........1..
+  ..........1..
+  ..........1..
+  ..........1..
+  ..........1..
+  ..........1..
+  ..........1..
+  ..........1..
+  ....S01...1..
+  ......1...1..
+  ......00001..
+  END
+  
+  
     is_deeply(printPath($g->p), <<END);
   S...........F
   1...........1
@@ -710,16 +730,16 @@ B<Example:>
     $d->svg (svg=>q(xy2), svgs=>2);
     $d->gds2(svg=>q(xy2));
    }
-
+  
 
 =for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2.svg">
-
+  
 
 =for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2_1.svg">
-
+  
 
 =for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2_2.svg">
-
+  
 
 =head2 wire($diagram, %options)
 
@@ -732,33 +752,36 @@ New wire on a wiring diagram.
 B<Example:>
 
 
-  if (1)
-   {my      $d = new(width=>5, height=>4);
-
+  if (1)                                                                            
+   {my      $d = new(width=>4, height=>3);
+  
     my $a = $d->wire(x=>0, y=>1, X=>2, Y=>1, n=>'a');  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
+  
     my $b = $d->wire(x=>1, y=>0, X=>1, Y=>2, n=>'b');  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
+  
     my $c = $d->wire(x=>2, y=>0, X=>2, Y=>2, n=>'c');  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
+  
     my $e = $d->wire(x=>0, y=>2, X=>1, Y=>1, n=>'e');  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
+  
     my $f = $d->wire(x=>0, y=>3, X=>4, Y=>0, n=>'f');  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
+  
+    my $F = $d->wire(x=>1, y=>3, X=>3, Y=>0, n=>'F');  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
+  
     is_deeply($d->levels, 1);
-
+  
     my $g = $d->wire(x=>0, y=>0, X=>3, Y=>0, n=>'g');  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
     is_deeply($d->levels, 2);
-    is_deeply($d->totalLength, 94);
+    is_deeply($d->totalLength, 119);
     is_deeply($d->levels, 2);
-
-
+  
+  
     is_deeply(printPath($a->p), <<END);
   .........
   .........
@@ -766,7 +789,7 @@ B<Example:>
   1.......1
   S.......F
   END
-
+  
     is_deeply(printPath($b->p), <<END);
   ..10S
   ..1..
@@ -778,7 +801,7 @@ B<Example:>
   ..1..
   ..00F
   END
-
+  
     is_deeply(printPath($c->p), <<END);
   ......10S
   ......1..
@@ -790,7 +813,7 @@ B<Example:>
   ......1..
   ......00F
   END
-
+  
     is_deeply(printPath($e->p), <<END);
   .....
   .....
@@ -802,7 +825,7 @@ B<Example:>
   1....
   S....
   END
-
+  
     is_deeply(printPath($f->p), <<END);
   ..............00F
   ..............1..
@@ -818,7 +841,26 @@ B<Example:>
   1................
   S................
   END
-
+  
+    is_deeply(printPath($F->p), <<END);
+  ..........00F
+  ..........1..
+  ..........1..
+  ..........1..
+  ..........1..
+  ..........1..
+  ..........1..
+  ..........1..
+  ..........1..
+  ..........1..
+  ..........1..
+  ..........1..
+  ....S01...1..
+  ......1...1..
+  ......00001..
+  END
+  
+  
     is_deeply(printPath($g->p), <<END);
   S...........F
   1...........1
@@ -827,16 +869,16 @@ B<Example:>
     $d->svg (svg=>q(xy2), svgs=>2);
     $d->gds2(svg=>q(xy2));
    }
-
+  
 
 =for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2.svg">
-
+  
 
 =for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2_1.svg">
-
+  
 
 =for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2_2.svg">
-
+  
 
 =head2 numberOfWires   ($D, %options)
 
@@ -849,10 +891,10 @@ Number of wires in the diagram
 B<Example:>
 
 
-  if (1)
+  if (1)                                                                          
    {my      $d = new(width=>3, height=>2);
     my $w = $d->wire(x=>1, y=>1, X=>2, Y=>1, n=>'a');
-
+  
     is_deeply($d->numberOfWires, 1);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
     is_deeply(printPath($w->p), <<END);
@@ -864,10 +906,10 @@ B<Example:>
   END
     $d->gds2(svg=>q(x1));
    }
-
+  
 
 =for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/x1.svg">
-
+  
 
 =head2 length  ($D, $w)
 
@@ -880,10 +922,10 @@ Length of a wire in a diagram
 B<Example:>
 
 
-  if (1)
-   {my      $d = new(width=>2, height=>3);
+  if (1)                                                                            
+   {my      $d = new(width=>1, height=>2);
     my $w = $d->wire(x=>1, y=>1, X=>1, Y=>2, n=>'b');
-
+  
     is_deeply($d->length($w), 5);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
     is_deeply(printPath($w->p), <<END);
@@ -900,13 +942,13 @@ B<Example:>
     $d->svg (svg=>q(y1));
     $d->gds2(svg=>q(y1));
    }
-
+  
 
 =for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/y1.svg">
-
+  
 
 =for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/y1_1.svg">
-
+  
 
 =head2 totalLength ($d)
 
@@ -918,23 +960,24 @@ Total length of wires
 B<Example:>
 
 
-  if (1)
-   {my      $d = new(width=>5, height=>4);
+  if (1)                                                                            
+   {my      $d = new(width=>4, height=>3);
     my $a = $d->wire(x=>0, y=>1, X=>2, Y=>1, n=>'a');
     my $b = $d->wire(x=>1, y=>0, X=>1, Y=>2, n=>'b');
     my $c = $d->wire(x=>2, y=>0, X=>2, Y=>2, n=>'c');
     my $e = $d->wire(x=>0, y=>2, X=>1, Y=>1, n=>'e');
     my $f = $d->wire(x=>0, y=>3, X=>4, Y=>0, n=>'f');
-
+    my $F = $d->wire(x=>1, y=>3, X=>3, Y=>0, n=>'F');
+  
     is_deeply($d->levels, 1);
     my $g = $d->wire(x=>0, y=>0, X=>3, Y=>0, n=>'g');
     is_deeply($d->levels, 2);
-
-    is_deeply($d->totalLength, 94);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
+  
+    is_deeply($d->totalLength, 119);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
     is_deeply($d->levels, 2);
-
-
+  
+  
     is_deeply(printPath($a->p), <<END);
   .........
   .........
@@ -942,7 +985,7 @@ B<Example:>
   1.......1
   S.......F
   END
-
+  
     is_deeply(printPath($b->p), <<END);
   ..10S
   ..1..
@@ -954,7 +997,7 @@ B<Example:>
   ..1..
   ..00F
   END
-
+  
     is_deeply(printPath($c->p), <<END);
   ......10S
   ......1..
@@ -966,7 +1009,7 @@ B<Example:>
   ......1..
   ......00F
   END
-
+  
     is_deeply(printPath($e->p), <<END);
   .....
   .....
@@ -978,7 +1021,7 @@ B<Example:>
   1....
   S....
   END
-
+  
     is_deeply(printPath($f->p), <<END);
   ..............00F
   ..............1..
@@ -994,7 +1037,26 @@ B<Example:>
   1................
   S................
   END
-
+  
+    is_deeply(printPath($F->p), <<END);
+  ..........00F
+  ..........1..
+  ..........1..
+  ..........1..
+  ..........1..
+  ..........1..
+  ..........1..
+  ..........1..
+  ..........1..
+  ..........1..
+  ..........1..
+  ..........1..
+  ....S01...1..
+  ......1...1..
+  ......00001..
+  END
+  
+  
     is_deeply(printPath($g->p), <<END);
   S...........F
   1...........1
@@ -1003,16 +1065,16 @@ B<Example:>
     $d->svg (svg=>q(xy2), svgs=>2);
     $d->gds2(svg=>q(xy2));
    }
-
+  
 
 =for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2.svg">
-
+  
 
 =for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2_1.svg">
-
+  
 
 =for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2_2.svg">
-
+  
 
 =head2 findShortestPath($diagram, $imageX, $imageY, $start, $finish)
 
@@ -1028,14 +1090,14 @@ Find the shortest path between two points in a two dimensional image stepping on
 B<Example:>
 
 
-  if (1)
+  if (1)                                                                          
    {my %i = splitSplit(<<END);
   111111
   000111
   000011
   111111
   END
-
+  
     my $p = [findShortestPath(undef, \%i, \%i, [0, 0], [0,3])];  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
     is_deeply(printPath($p), <<END);
@@ -1045,7 +1107,7 @@ B<Example:>
   F0000
   END
    }
-
+  
 
 =head1 Visualize
 
@@ -1062,11 +1124,11 @@ Print a diagram
 B<Example:>
 
 
-  if (1)
-   {my      $d = new(width=>3, height=>3);
+  if (1)                                                                           
+   {my      $d = new(width=>2, height=>2);
     my $a = $d->wire(x=>1, y=>1, X=>2, Y=>1, n=>'a');
     my $b = $d->wire(x=>1, y=>2, X=>2, Y=>2, n=>'b');
-
+  
     is_deeply($d->print, <<END);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
   Length: 10
@@ -1076,7 +1138,7 @@ B<Example:>
   END
     is_deeply($d->printWire($a), "   1,   1      2,   1   1  a       4,4,0  5,4,0  6,4,0  7,4,0  8,4");
    }
-
+  
 
 =head2 printWire   ($D, $W)
 
@@ -1089,8 +1151,8 @@ Print a wire to a string
 B<Example:>
 
 
-  if (1)
-   {my      $d = new(width=>3, height=>3);
+  if (1)                                                                           
+   {my      $d = new(width=>2, height=>2);
     my $a = $d->wire(x=>1, y=>1, X=>2, Y=>1, n=>'a');
     my $b = $d->wire(x=>1, y=>2, X=>2, Y=>2, n=>'b');
     is_deeply($d->print, <<END);
@@ -1099,11 +1161,11 @@ B<Example:>
      1,   1      2,   1   1  a       4,4,0  5,4,0  6,4,0  7,4,0  8,4
      1,   2      2,   2   1  b       4,8,0  5,8,0  6,8,0  7,8,0  8,8
   END
-
+  
     is_deeply($d->printWire($a), "   1,   1      2,   1   1  a       4,4,0  5,4,0  6,4,0  7,4,0  8,4");  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
    }
-
+  
 
 =head2 printPath   ($P)
 
@@ -1115,10 +1177,10 @@ Print a path as a two dimensional character image
 B<Example:>
 
 
-  if (1)
-   {my      $d = new(width=>3, height=>3);
+  if (1)                                                                          
+   {my      $d = new(width=>2, height=>2);
     my $a = $d->wire(x=>1, y=>1, X=>2, Y=>2, n=>'a');
-
+  
     is_deeply(printPath($a->p), <<END);  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
   .........
@@ -1134,13 +1196,13 @@ B<Example:>
     $d->gds2(svg=>q(xy1));
     $d->svg (svg=>q(xy1));
    }
-
+  
 
 =for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy1.svg">
-
+  
 
 =for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy1_1.svg">
-
+  
 
 =head2 svg ($D, %options)
 
@@ -1153,8 +1215,8 @@ Draw the bus lines by level.
 B<Example:>
 
 
-  if (1)
-   {my      $d = new(width=>2, height=>3);
+  if (1)                                                                            
+   {my      $d = new(width=>1, height=>2);
     my $w = $d->wire(x=>1, y=>1, X=>1, Y=>2, n=>'b');
     is_deeply($d->length($w), 5);
     is_deeply(printPath($w->p), <<END);
@@ -1168,20 +1230,20 @@ B<Example:>
   ....1
   ....F
   END
-
+  
     $d->svg (svg=>q(y1));  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-
+  
     $d->gds2(svg=>q(y1));  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
    }
-
+  
 
 =for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/y1.svg">
-
+  
 
 =for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/y1_1.svg">
-
+  
 
 =head2 gds2($diagram, %options)
 
@@ -1194,8 +1256,8 @@ Draw the wires using GDS2
 B<Example:>
 
 
-  if (1)
-   {my      $d = new(width=>2, height=>3);
+  if (1)                                                                            
+   {my      $d = new(width=>1, height=>2);
     my $w = $d->wire(x=>1, y=>1, X=>1, Y=>2, n=>'b');
     is_deeply($d->length($w), 5);
     is_deeply(printPath($w->p), <<END);
@@ -1210,17 +1272,17 @@ B<Example:>
   ....F
   END
     $d->svg (svg=>q(y1));
-
+  
     $d->gds2(svg=>q(y1));  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
    }
-
+  
 
 =for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/y1.svg">
-
+  
 
 =for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/y1_1.svg">
-
+  
 
 
 =head1 Hash Definitions
