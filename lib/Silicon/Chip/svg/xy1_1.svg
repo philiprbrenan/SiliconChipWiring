@@ -1,28 +1,24 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
-<svg height="100%" viewBox="0 0 4 4" width="100%" background-color="none" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg height="100%" viewBox="0 0 3 3" width="100%" background-color="none" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 
-<path d="M 1 1.25 L 1.75 1.25 L 1.75 1 L 1 1 Z" fill="#9F05AA" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
-<path d="M 1.75 1.25 L 1.5 1.25 L 1.5 2.25 L 1.75 2.25 Z" fill="#9F05AA" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
-<path d="M 1.75 2.25 L 2.25 2.25 L 2.25 2 L 1.75 2 Z" fill="#9F05AA" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 1 1.25 L 1.75 1.25 L 1.75 1 L 1 1 Z" fill="#910DA3" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 1.75 1.25 L 1.5 1.25 L 1.5 2.25 L 1.75 2.25 Z" fill="#910DA3" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 1.75 2.25 L 2.25 2.25 L 2.25 2 L 1.75 2 Z" fill="#910DA3" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
 <rect fill="darkGreen" height="0.25" opacity="0.75" stroke="transparent" stroke-width="0.5" width="0.25" x="1" y="1"/>
 <rect fill="darkRed" height="0.25" opacity="0.75" stroke="transparent" stroke-width="0.5" width="0.25" x="2" y="2"/>
-<line dominant-baseline="hanging" fill="transparent" font-size="0.25" opacity="0.2" stroke="black" stroke-width="0.015625" text-anchor="start" x1="0" x2="0" y1="0" y2="4"/>
+<line dominant-baseline="hanging" fill="transparent" font-size="0.25" opacity="0.2" stroke="black" stroke-width="0.015625" text-anchor="start" x1="0" x2="0" y1="0" y2="3"/>
 <text dominant-baseline="hanging" fill="black" font-size="0.25" opacity="1" stroke="black" stroke-width="0.015625" text-anchor="start" x="0" y="0">0</text>
-<line dominant-baseline="hanging" fill="transparent" font-size="0.25" opacity="0.2" stroke="black" stroke-width="0.015625" text-anchor="start" x1="1" x2="1" y1="0" y2="4"/>
+<line dominant-baseline="hanging" fill="transparent" font-size="0.25" opacity="0.2" stroke="black" stroke-width="0.015625" text-anchor="start" x1="1" x2="1" y1="0" y2="3"/>
 <text dominant-baseline="hanging" fill="black" font-size="0.25" opacity="1" stroke="black" stroke-width="0.015625" text-anchor="start" x="1" y="0">1</text>
-<line dominant-baseline="hanging" fill="transparent" font-size="0.25" opacity="0.2" stroke="black" stroke-width="0.015625" text-anchor="start" x1="2" x2="2" y1="0" y2="4"/>
+<line dominant-baseline="hanging" fill="transparent" font-size="0.25" opacity="0.2" stroke="black" stroke-width="0.015625" text-anchor="start" x1="2" x2="2" y1="0" y2="3"/>
 <text dominant-baseline="hanging" fill="black" font-size="0.25" opacity="1" stroke="black" stroke-width="0.015625" text-anchor="start" x="2" y="0">2</text>
-<line dominant-baseline="hanging" fill="transparent" font-size="0.25" opacity="0.2" stroke="black" stroke-width="0.015625" text-anchor="start" x1="3" x2="3" y1="0" y2="4"/>
-<text dominant-baseline="hanging" fill="black" font-size="0.25" opacity="1" stroke="black" stroke-width="0.015625" text-anchor="start" x="3" y="0">3</text>
-<line dominant-baseline="hanging" fill="transparent" font-size="0.25" opacity="0.2" stroke="black" stroke-width="0.015625" text-anchor="start" x1="4" x2="4" y1="0" y2="4"/>
-<line dominant-baseline="hanging" fill="transparent" font-size="0.25" opacity="0.2" stroke="black" stroke-width="0.015625" text-anchor="start" x1="0" x2="4" y1="0" y2="0"/>
+<line dominant-baseline="hanging" fill="transparent" font-size="0.25" opacity="0.2" stroke="black" stroke-width="0.015625" text-anchor="start" x1="3" x2="3" y1="0" y2="3"/>
+<line dominant-baseline="hanging" fill="transparent" font-size="0.25" opacity="0.2" stroke="black" stroke-width="0.015625" text-anchor="start" x1="0" x2="3" y1="0" y2="0"/>
 <text dominant-baseline="hanging" fill="black" font-size="0.25" opacity="1" stroke="black" stroke-width="0.015625" text-anchor="start" x="0" y="0">0</text>
-<line dominant-baseline="hanging" fill="transparent" font-size="0.25" opacity="0.2" stroke="black" stroke-width="0.015625" text-anchor="start" x1="0" x2="4" y1="1" y2="1"/>
+<line dominant-baseline="hanging" fill="transparent" font-size="0.25" opacity="0.2" stroke="black" stroke-width="0.015625" text-anchor="start" x1="0" x2="3" y1="1" y2="1"/>
 <text dominant-baseline="hanging" fill="black" font-size="0.25" opacity="1" stroke="black" stroke-width="0.015625" text-anchor="start" x="0" y="1">1</text>
-<line dominant-baseline="hanging" fill="transparent" font-size="0.25" opacity="0.2" stroke="black" stroke-width="0.015625" text-anchor="start" x1="0" x2="4" y1="2" y2="2"/>
+<line dominant-baseline="hanging" fill="transparent" font-size="0.25" opacity="0.2" stroke="black" stroke-width="0.015625" text-anchor="start" x1="0" x2="3" y1="2" y2="2"/>
 <text dominant-baseline="hanging" fill="black" font-size="0.25" opacity="1" stroke="black" stroke-width="0.015625" text-anchor="start" x="0" y="2">2</text>
-<line dominant-baseline="hanging" fill="transparent" font-size="0.25" opacity="0.2" stroke="black" stroke-width="0.015625" text-anchor="start" x1="0" x2="4" y1="3" y2="3"/>
-<text dominant-baseline="hanging" fill="black" font-size="0.25" opacity="1" stroke="black" stroke-width="0.015625" text-anchor="start" x="0" y="3">3</text>
-<line dominant-baseline="hanging" fill="transparent" font-size="0.25" opacity="0.2" stroke="black" stroke-width="0.015625" text-anchor="start" x1="0" x2="4" y1="4" y2="4"/>
+<line dominant-baseline="hanging" fill="transparent" font-size="0.25" opacity="0.2" stroke="black" stroke-width="0.015625" text-anchor="start" x1="0" x2="3" y1="3" y2="3"/>
 </svg>
