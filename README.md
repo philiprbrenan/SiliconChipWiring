@@ -153,10 +153,22 @@ New wiring diagram.
     1...........1
     0000000000001
     END
-      $d->svg (svg=>q(xy2), svgs=>2);
+      $d->svg (svg=>q(xy2), pngs=>2);
       $d->gds2(svg=>q(xy2));
      }
     
+
+<div>
+    <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/png/xy2.png">
+</div>
+
+<div>
+    <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/png/xy2_1.png">
+</div>
+
+<div>
+    <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/png/xy2_2.png">
+</div>
 
 <div>
     <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2.svg">
@@ -294,10 +306,22 @@ New wire on a wiring diagram.
     1...........1
     0000000000001
     END
-      $d->svg (svg=>q(xy2), svgs=>2);
+      $d->svg (svg=>q(xy2), pngs=>2);
       $d->gds2(svg=>q(xy2));
      }
     
+
+<div>
+    <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/png/xy2.png">
+</div>
+
+<div>
+    <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/png/xy2_1.png">
+</div>
+
+<div>
+    <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/png/xy2_2.png">
+</div>
 
 <div>
     <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2.svg">
@@ -493,10 +517,22 @@ Total length of wires
     1...........1
     0000000000001
     END
-      $d->svg (svg=>q(xy2), svgs=>2);
+      $d->svg (svg=>q(xy2), pngs=>2);
       $d->gds2(svg=>q(xy2));
      }
     
+
+<div>
+    <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/png/xy2.png">
+</div>
+
+<div>
+    <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/png/xy2_1.png">
+</div>
+
+<div>
+    <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/png/xy2_2.png">
+</div>
 
 <div>
     <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2.svg">
