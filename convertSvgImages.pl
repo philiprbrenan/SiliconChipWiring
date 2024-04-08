@@ -35,5 +35,5 @@ for my $s(@f)                                                                   
 
 for my $x(qw(gds png svg))                                                      # Upload images to target location
  {say STDERR dump([$user, $repo, fpd($home, $dir, $x), $x]);
-  writeFolderUsingSavedToken $user, $repo, fpd($home, $dir, $x), $x;
+  writeFolderUsingSavedToken $user, $repo, fpd($dir, $x), $x;
  }
