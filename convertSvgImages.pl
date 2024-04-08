@@ -1,4 +1,4 @@
-#!/usr/bin/perl -I/home/phil/perl/cpan/DataTableText/lib/
+#!/usr/bin/perl -I/home/phil/perl/cpan/DataTableText/lib/ -I/home/phil/perl/cpan/GitHubCrud/lib
 #-------------------------------------------------------------------------------
 # Post process SVG images to PNG.  Place images for use in documentation.
 # Philip R Brenan at appaapps dot com, Appa Apps Ltd Inc., 2024
@@ -17,7 +17,6 @@ my $imgs  = fpd $home, $dir;                                                    
    $imgs  = $home if $ENV{GITHUB_TOKEN};                                        # Change folders for github
 my $svg   = fpd $imgs, qw(svg);                                                 # Svg folder
 my $png   = fpd $imgs, qw(png);                                                 # Png folder
-my $gds   = fpd $imgs, qw(gds);                                                 # Gds folder
 my ($user, $repo) =
   split m(/), $ENV{GITHUB_REPOSITORY} // "philiprbrenan/SiliconChipWiring";     # User / repo
 
@@ -30,10 +29,11 @@ for my $s(@f)                                                                   
      $t = swapFilePrefix $t, $svg, $png;                                        # Matching png
   my $c = qq(cairosvg -o $t --output-width 10000 --output-height 10000 $s);
   say STDERR qq($c);
-  say STDERR qx($c);
+  #say STDERR qx($c);
  }
 
 for my $x(qw(gds png svg))                                                      # Upload images to target location
- {say STDERR dump([$user, $repo, fpd($home, $dir, $x), $x]);
-  writeFolderUsingSavedToken $user, $repo, fpd($dir, $x), $x;
+ {say STDERR dump([$user, $repo, fpd($dir, $x), $x]);
+  my $r = writeFolderUsingSavedToken $user, $repo, fpd($dir, $x), fpd($imgs, $x);
+say STDERR "AAAA ", dump($r);
  }
