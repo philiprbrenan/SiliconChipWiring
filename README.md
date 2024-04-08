@@ -6,18 +6,14 @@
 
 Silicon::Chip::Wiring - Wire up a [silicon](https://en.wikipedia.org/wiki/Silicon) [chip](https://en.wikipedia.org/wiki/Integrated_circuit) to combine [logic gates](https://en.wikipedia.org/wiki/Logic_gate) to transform software into hardware.
 
+file:///home/phil/perl/cpan/SiliconChipWiring/lib/Silicon/Chip/svg/xy2\_1.svg
+
 # Synopsis
 
 ## Wire up a silicon chip
 
 <div>
-    <p><img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/square.svg">
-</div>
-
-## Automatic wiring around obstacles
-
-<div>
-    <p><img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/wire3c_n_1.svg">
+    <p><img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2_1.svg">
 </div>
 
 ## Assumptions
@@ -330,7 +326,6 @@ Length of a wire in a diagram
     END
       $d->svg (svg=>q(y1));
       $d->gds2(svg=>q(y1));
-    #svg=>q(y1_1)
      }
 
 <div>
@@ -566,6 +561,10 @@ Print a path as a two dimensional character image
     <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy1.svg">
 </div>
 
+<div>
+    <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy1_1.svg">
+</div>
+
 ## svg ($D, %options)
 
 Draw the bus lines by level.
@@ -596,9 +595,6 @@ Draw the bus lines by level.
 
 
       $d->gds2(svg=>q(y1));  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
-
-
-    #svg=>q(y1_1)  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
      }
 
@@ -639,7 +635,6 @@ Draw the wires using GDS2
 
       $d->gds2(svg=>q(y1));  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-    #svg=>q(y1_1)
      }
 
 <div>
