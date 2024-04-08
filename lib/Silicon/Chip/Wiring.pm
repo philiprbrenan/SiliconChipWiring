@@ -106,7 +106,7 @@ sub wire($%)                                                                    
     my sub setOrUnset($$)                                                       # Set a sub cell or clear it by deleting it
      {my ($i, $j) = @_;                                                         # Position to set or clear
       my $px = $x*4+$i; my $py = $y*4+$j;
-      return if $px < 0 or $py < 0 or $px >= $w*4 or $py >= $h*4;               # Sub cell out of range
+      return if $px < 0 or $py < 0 or $px > $w*4 or $py > $h*4;                 # Sub cell out of range
       if (defined $v)
        {$m->{$px}{$py} = $v;                                                    # Set sub cell as having metal
        }
@@ -576,16 +576,14 @@ use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 
 Silicon::Chip::Wiring - Wire up a L<silicon|https://en.wikipedia.org/wiki/Silicon> L<chip|https://en.wikipedia.org/wiki/Integrated_circuit> to combine L<logic gates|https://en.wikipedia.org/wiki/Logic_gate> to transform software into hardware.
 
+file:///home/phil/perl/cpan/SiliconChipWiring/lib/Silicon/Chip/svg/xy2_1.svg
+
 =head1 Synopsis
 
 =head2 Wire up a silicon chip
 
-=for html <p><img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/square.svg">
+=for html <p><img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2_1.svg">
 
-
-=head2 Automatic wiring around obstacles
-
-=for html <p><img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/wire3c_n_1.svg">
 
 =head2 Assumptions
 
@@ -901,7 +899,6 @@ B<Example:>
   END
     $d->svg (svg=>q(y1));
     $d->gds2(svg=>q(y1));
-  #svg=>q(y1_1)
    }
 
 
@@ -1142,6 +1139,9 @@ B<Example:>
 =for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy1.svg">
 
 
+=for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy1_1.svg">
+
+
 =head2 svg ($D, %options)
 
 Draw the bus lines by level.
@@ -1173,9 +1173,6 @@ B<Example:>
 
 
     $d->gds2(svg=>q(y1));  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
-
-
-  #svg=>q(y1_1)  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
    }
 
@@ -1216,7 +1213,6 @@ B<Example:>
 
     $d->gds2(svg=>q(y1));  # 𝗘𝘅𝗮𝗺𝗽𝗹𝗲
 
-  #svg=>q(y1_1)
    }
 
 
@@ -1529,7 +1525,7 @@ END
 
 #latest:;
 if (1)                                                                          #Tsvg #Tgds2 #Tlength
- {my      $d = new(width=>2, height=>3);
+ {my      $d = new(width=>1, height=>2);
   my $w = $d->wire(x=>1, y=>1, X=>1, Y=>2, n=>'b');
   is_deeply($d->length($w), 5);
   is_deeply(printPath($w->p), <<END);
@@ -1549,7 +1545,7 @@ END
 
 #latest:;
 if (1)                                                                          #TprintPath
- {my      $d = new(width=>3, height=>3);
+ {my      $d = new(width=>2, height=>2);
   my $a = $d->wire(x=>1, y=>1, X=>2, Y=>2, n=>'a');
   is_deeply(printPath($a->p), <<END);
 .........
@@ -1568,7 +1564,7 @@ END
 
 #latest:;
 if (1)                                                                          #Tprint #TprintWire
- {my      $d = new(width=>3, height=>3);
+ {my      $d = new(width=>2, height=>2);
   my $a = $d->wire(x=>1, y=>1, X=>2, Y=>1, n=>'a');
   my $b = $d->wire(x=>1, y=>2, X=>2, Y=>2, n=>'b');
   is_deeply($d->print, <<END);
@@ -1582,17 +1578,18 @@ END
 
 #latest:;
 if (1)                                                                          #Tnew #Twire #TtotalLength
- {my      $d = new(width=>5, height=>4);
+ {my      $d = new(width=>4, height=>3);
   my $a = $d->wire(x=>0, y=>1, X=>2, Y=>1, n=>'a');
   my $b = $d->wire(x=>1, y=>0, X=>1, Y=>2, n=>'b');
   my $c = $d->wire(x=>2, y=>0, X=>2, Y=>2, n=>'c');
   my $e = $d->wire(x=>0, y=>2, X=>1, Y=>1, n=>'e');
   my $f = $d->wire(x=>0, y=>3, X=>4, Y=>0, n=>'f');
+  my $F = $d->wire(x=>1, y=>3, X=>3, Y=>0, n=>'F');
 
   is_deeply($d->levels, 1);
   my $g = $d->wire(x=>0, y=>0, X=>3, Y=>0, n=>'g');
   is_deeply($d->levels, 2);
-  is_deeply($d->totalLength, 94);
+  is_deeply($d->totalLength, 119);
   is_deeply($d->levels, 2);
 
 
@@ -1655,6 +1652,25 @@ END
 1................
 S................
 END
+
+  is_deeply(printPath($F->p), <<END);
+..........00F
+..........1..
+..........1..
+..........1..
+..........1..
+..........1..
+..........1..
+..........1..
+..........1..
+..........1..
+..........1..
+..........1..
+....S01...1..
+......1...1..
+......00001..
+END
+
 
   is_deeply(printPath($g->p), <<END);
 S...........F
