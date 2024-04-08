@@ -21,9 +21,9 @@ my $repo  = "SiliconChipWiring";                                                
 my $token = $ARGV[1];                                                           # Github token
 
 if ($ENV{GITHUB_TOKEN})                                                         # Change folders for github
- {$svg = q(svg);
-  $png = q(png);
-  $gds = q(gds);
+ {$svg = q(svg/);
+  $png = q(png/);
+  $gds = q(gds/);
  }
 
 makePath($png);                                                                 # Make png folder
