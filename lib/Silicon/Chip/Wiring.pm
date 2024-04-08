@@ -727,9 +727,18 @@ B<Example:>
   1...........1
   0000000000001
   END
-    $d->svg (svg=>q(xy2), svgs=>2);
+    $d->svg (svg=>q(xy2), pngs=>2);
     $d->gds2(svg=>q(xy2));
    }
+  
+
+=for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/png/xy2.png">
+  
+
+=for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/png/xy2_1.png">
+  
+
+=for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/png/xy2_2.png">
   
 
 =for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2.svg">
@@ -866,9 +875,18 @@ B<Example:>
   1...........1
   0000000000001
   END
-    $d->svg (svg=>q(xy2), svgs=>2);
+    $d->svg (svg=>q(xy2), pngs=>2);
     $d->gds2(svg=>q(xy2));
    }
+  
+
+=for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/png/xy2.png">
+  
+
+=for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/png/xy2_1.png">
+  
+
+=for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/png/xy2_2.png">
   
 
 =for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2.svg">
@@ -1062,9 +1080,18 @@ B<Example:>
   1...........1
   0000000000001
   END
-    $d->svg (svg=>q(xy2), svgs=>2);
+    $d->svg (svg=>q(xy2), pngs=>2);
     $d->gds2(svg=>q(xy2));
    }
+  
+
+=for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/png/xy2.png">
+  
+
+=for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/png/xy2_1.png">
+  
+
+=for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/png/xy2_2.png">
   
 
 =for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2.svg">
@@ -1739,7 +1766,7 @@ S...........F
 1...........1
 0000000000001
 END
-  $d->svg (svg=>q(xy2), svgs=>2);
+  $d->svg (svg=>q(xy2), pngs=>2);
   $d->gds2(svg=>q(xy2));
  }
 
