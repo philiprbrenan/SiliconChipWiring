@@ -28,6 +28,6 @@ for my $s(@f)                                                                   
   say STDERR qx(cairosvg -o $t --output-width 10000 --output-height 10000 $s);
  }
 
-writeFolderUsingSavedToken $user, $repo, "lib/Silicon/Chip/svg/", "svg/", $token
-writeFolderUsingSavedToken $user, $repo, "lib/Silicon/Chip/gds/", "gds/", $token
-writeFolderUsingSavedToken $user, $repo, "lib/Silicon/Chip/png/", "png/", $token
+writeFolderUsingSavedToken $user, $repo, "lib/Silicon/Chip/svg/", "svg/", $token;
+writeFolderUsingSavedToken $user, $repo, "lib/Silicon/Chip/gds/", "gds/", $token;
+writeFolderUsingSavedToken $user, $repo, "lib/Silicon/Chip/png/", "png/", $token;
