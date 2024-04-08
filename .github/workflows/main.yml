@@ -1,4 +1,4 @@
-# Test 2024-04-08 at 05:47:07
+# Test 2024-04-08 at 05:49:43
 
 name: Test
 
@@ -62,6 +62,10 @@ jobs:
         perl -Idtt/lib -Igh/lib convertImages.pl
         #perl -Idtt/lib -Igh/lib -MGitHub::Crud -e"&GitHub::Crud::writeFolderUsingSavedToken(@ARGV)" -- philiprbrenan SiliconChipWiring lib/Silicon/Chip/svg/ svg/
         #perl -Idtt/lib -Igh/lib -MGitHub::Crud -e"&GitHub::Crud::writeFolderUsingSavedToken(@ARGV)" -- philiprbrenan SiliconChipWiring lib/Silicon/Chip/gds/ gds/
+
+    - name: Tree2
+      run:
+        tree
 
     - uses: actions/upload-artifact@v4
       with:
