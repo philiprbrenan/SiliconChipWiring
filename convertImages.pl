@@ -15,9 +15,16 @@ my $home  = currentDirectory;                                                   
 my $imgs  = fpd $home, qw(lib Silicon Chip);                                    # Images folder
 my $svg   = fpd $imgs, qw(svg);                                                 # Svg folder
 my $png   = fpd $imgs, qw(png);                                                 # Png folder
+my $gds   = fpd $imgs, qw(gds);                                                 # Gds folder
 my $user  = "philiprbrenan";                                                    # Userid
 my $repo  = "SiliconChipWiring";                                                # Repo
 my $token = $ARGV[1];                                                           # Github token
+
+if ($ENV{GITHUB_TOKEN})                                                         # Change folders for github
+ {$svg = q(svg);
+  $png = q(png);
+  $gds = q(gds);
+ }
 
 makePath($png);                                                                 # Make png folder
 
