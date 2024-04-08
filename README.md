@@ -154,7 +154,7 @@ New wiring diagram.
     0000000000001
     END
       $d->svg (svg=>q(xy2), pngs=>2);
-      $d->gds2(svg=>q(xy2));
+      $d->gds2(svg=>q/xy2/);
      }
     
 
@@ -168,18 +168,6 @@ New wiring diagram.
 
 <div>
     <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/png/xy2_2.png">
-</div>
-
-<div>
-    <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2.svg">
-</div>
-
-<div>
-    <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2_1.svg">
-</div>
-
-<div>
-    <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2_2.svg">
 </div>
 
 ## wire($diagram, %options)
@@ -307,7 +295,7 @@ New wire on a wiring diagram.
     0000000000001
     END
       $d->svg (svg=>q(xy2), pngs=>2);
-      $d->gds2(svg=>q(xy2));
+      $d->gds2(svg=>q/xy2/);
      }
     
 
@@ -321,18 +309,6 @@ New wire on a wiring diagram.
 
 <div>
     <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/png/xy2_2.png">
-</div>
-
-<div>
-    <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2.svg">
-</div>
-
-<div>
-    <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2_1.svg">
-</div>
-
-<div>
-    <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2_2.svg">
 </div>
 
 ## numberOfWires   ($D, %options)
@@ -518,7 +494,7 @@ Total length of wires
     0000000000001
     END
       $d->svg (svg=>q(xy2), pngs=>2);
-      $d->gds2(svg=>q(xy2));
+      $d->gds2(svg=>q/xy2/);
      }
     
 
@@ -532,18 +508,6 @@ Total length of wires
 
 <div>
     <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/png/xy2_2.png">
-</div>
-
-<div>
-    <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2.svg">
-</div>
-
-<div>
-    <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2_1.svg">
-</div>
-
-<div>
-    <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2_2.svg">
 </div>
 
 ## findShortestPath($diagram, $imageX, $imageY, $start, $finish)
