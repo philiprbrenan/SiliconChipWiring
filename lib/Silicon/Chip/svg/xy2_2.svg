@@ -2,9 +2,9 @@
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
 <svg height="100%" viewBox="0 0 5 4" width="100%" background-color="none" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 
-<path d="M 0.25 0 L 0 0 L 0 0.75 L 0.25 0.75 Z" fill="#B9F536" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
-<path d="M 0.25 0.75 L 3.25 0.75 L 3.25 0.5 L 0.25 0.5 Z" fill="#B9F536" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
-<path d="M 3.25 0.5 L 3 0.5 L 3 0 L 3.25 0 Z" fill="#B9F536" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 0.25 0 L 0 0 L 0 0.75 L 0.25 0.75 Z" fill="#7FD7BC" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 0.25 0.75 L 3.25 0.75 L 3.25 0.5 L 0.25 0.5 Z" fill="#7FD7BC" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 3.25 0.5 L 3 0.5 L 3 0 L 3.25 0 Z" fill="#7FD7BC" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
 <rect fill="darkGreen" height="0.25" opacity="0.75" stroke="transparent" stroke-width="0.5" width="0.25" x="0" y="0"/>
 <rect fill="darkRed" height="0.25" opacity="0.75" stroke="transparent" stroke-width="0.5" width="0.25" x="3" y="0"/>
 <line dominant-baseline="hanging" fill="transparent" font-size="0.25" opacity="0.2" stroke="black" stroke-width="0.015625" text-anchor="start" x1="0" x2="0" y1="0" y2="4"/>
