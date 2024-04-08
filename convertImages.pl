@@ -12,23 +12,18 @@ use Data::Table::Text qw(:all);
 use GitHub::Crud qw(:all);
 
 my $home  = currentDirectory;                                                   # Home folder
-my $imgs  = fpd $home, qw(lib Silicon Chip);                                    # Images folder
+my $dir   = fpd qw(lib Silicon Chip);                                           # Target folder for images
+my $imgs  = fpd $home, $dir;                                                    # Images source folder
+   $imgs  = $home if $ENV{GITHUB_TOKEN};                                        # Change folders for github
 my $svg   = fpd $imgs, qw(svg);                                                 # Svg folder
 my $png   = fpd $imgs, qw(png);                                                 # Png folder
 my $gds   = fpd $imgs, qw(gds);                                                 # Gds folder
-my $user  = "philiprbrenan";                                                    # Userid
-my $repo  = "SiliconChipWiring";                                                # Repo
-my $token = $ARGV[1];                                                           # Github token
-
-if ($ENV{GITHUB_TOKEN})                                                         # Change folders for github
- {$svg = q(svg/);
-  $png = q(png/);
-  $gds = q(gds/);
- }
+my $imgt  = fpd $home, $dir;                                                    # Images target folder
+my ($user, $repo) = split m(/), $ENV{GITHUB_REPOSITORY};                        # Repo
 
 makePath($png);                                                                 # Make png folder
 
-my @f = searchDirectoryTreesForMatchingFiles $svg, qw(.svg);
+my @f = searchDirectoryTreesForMatchingFiles $svg, qw(.svg);                    # Svg files from which we make png files
 
 for my $s(@f)                                                                   # Svg files
  {my $t = setFileExtension $s, q(png);
@@ -38,6 +33,6 @@ for my $s(@f)                                                                   
   say STDERR qx($c);
  }
 
-writeFolderUsingSavedToken $user, $repo, "lib/Silicon/Chip/svg/", "svg/", $token;
-writeFolderUsingSavedToken $user, $repo, "lib/Silicon/Chip/gds/", "gds/", $token;
-writeFolderUsingSavedToken $user, $repo, "lib/Silicon/Chip/png/", "png/", $token;
+for my $x(qw(gds png svg))                                                      # Upload images to target location
+ {writeFolderUsingSavedToken $user, $repo, fpd($imgt, $_), $_
+ }
