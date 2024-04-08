@@ -1,4 +1,4 @@
-# Test 2024-04-08 at 04:35:06
+# Test 2024-04-08 at 05:32:44
 
 name: Test
 
@@ -40,9 +40,9 @@ jobs:
       run:
         sudo apt install tree
 
-    - name: Tree
+    - name: Install Cairo svg
       run:
-        tree
+        sudo apt install cairosvg
 
     - name: Cpan
       run:  sudo cpan install -T Data::Dump GDS2 Digest::SHA1
@@ -51,17 +51,23 @@ jobs:
       run:
         perl -Idtt/lib -Isvg/lib -Imicl/lib  lib/Silicon/Chip/Wiring.pm
 
+    - name: Tree
+      run:
+        tree
+
     - name: Upload images
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        tree
-        perl -Idtt/lib -Igh/lib -MGitHub::Crud -e"&GitHub::Crud::writeFolderUsingSavedToken(@ARGV)" -- philiprbrenan SiliconChipWiring lib/Silicon/Chip/svg/ svg/
-        perl -Idtt/lib -Igh/lib -MGitHub::Crud -e"&GitHub::Crud::writeFolderUsingSavedToken(@ARGV)" -- philiprbrenan SiliconChipWiring lib/Silicon/Chip/gds/ gds/
+        perl -Idtt/lib -Igh/lib convertImages.pl
+        #perl -Idtt/lib -Igh/lib -MGitHub::Crud -e"&GitHub::Crud::writeFolderUsingSavedToken(@ARGV)" -- philiprbrenan SiliconChipWiring lib/Silicon/Chip/svg/ svg/
+        #perl -Idtt/lib -Igh/lib -MGitHub::Crud -e"&GitHub::Crud::writeFolderUsingSavedToken(@ARGV)" -- philiprbrenan SiliconChipWiring lib/Silicon/Chip/gds/ gds/
 
     - uses: actions/upload-artifact@v4
       with:
         name: Wiring
         path: |
+          gds
+          png
           svg
 
