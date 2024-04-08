@@ -728,7 +728,7 @@ B<Example:>
   0000000000001
   END
     $d->svg (svg=>q(xy2), pngs=>2);
-    $d->gds2(svg=>q(xy2));
+    $d->gds2(svg=>q/xy2/);
    }
   
 
@@ -739,15 +739,6 @@ B<Example:>
   
 
 =for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/png/xy2_2.png">
-  
-
-=for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2.svg">
-  
-
-=for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2_1.svg">
-  
-
-=for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2_2.svg">
   
 
 =head2 wire($diagram, %options)
@@ -876,7 +867,7 @@ B<Example:>
   0000000000001
   END
     $d->svg (svg=>q(xy2), pngs=>2);
-    $d->gds2(svg=>q(xy2));
+    $d->gds2(svg=>q/xy2/);
    }
   
 
@@ -887,15 +878,6 @@ B<Example:>
   
 
 =for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/png/xy2_2.png">
-  
-
-=for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2.svg">
-  
-
-=for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2_1.svg">
-  
-
-=for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2_2.svg">
   
 
 =head2 numberOfWires   ($D, %options)
@@ -1081,7 +1063,7 @@ B<Example:>
   0000000000001
   END
     $d->svg (svg=>q(xy2), pngs=>2);
-    $d->gds2(svg=>q(xy2));
+    $d->gds2(svg=>q/xy2/);
    }
   
 
@@ -1092,15 +1074,6 @@ B<Example:>
   
 
 =for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/png/xy2_2.png">
-  
-
-=for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2.svg">
-  
-
-=for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2_1.svg">
-  
-
-=for html <img src="https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/xy2_2.svg">
   
 
 =head2 findShortestPath($diagram, $imageX, $imageY, $start, $finish)
@@ -1767,7 +1740,7 @@ S...........F
 0000000000001
 END
   $d->svg (svg=>q(xy2), pngs=>2);
-  $d->gds2(svg=>q(xy2));
+  $d->gds2(svg=>q/xy2/);
  }
 
 #    Original   Collapse
