@@ -1,6 +1,6 @@
 #!/usr/bin/perl -I/home/phil/perl/cpan/DataTableText/lib/
 #-------------------------------------------------------------------------------
-# Post process images
+# Post process SVG images to PNG.  Place images for use in documentation.
 # Philip R Brenan at appaapps dot com, Appa Apps Ltd Inc., 2024
 #-------------------------------------------------------------------------------
 use v5.34;
@@ -18,7 +18,6 @@ my $imgs  = fpd $home, $dir;                                                    
 my $svg   = fpd $imgs, qw(svg);                                                 # Svg folder
 my $png   = fpd $imgs, qw(png);                                                 # Png folder
 my $gds   = fpd $imgs, qw(gds);                                                 # Gds folder
-my $imgt  = fpd $home, $dir;                                                    # Images target folder
 my ($user, $repo) = split m(/), $ENV{GITHUB_REPOSITORY};                        # Repo
 
 makePath($png);                                                                 # Make png folder
@@ -34,5 +33,5 @@ for my $s(@f)                                                                   
  }
 
 for my $x(qw(gds png svg))                                                      # Upload images to target location
- {writeFolderUsingSavedToken $user, $repo, fpd($imgt, $_), $_
+ {writeFolderUsingSavedToken $user, $repo, fpd($home, $dir, $x), $x
  }
