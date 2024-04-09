@@ -372,12 +372,12 @@ sub svg($%)                                                                     
  }
 
 my sub darkSvgColor                                                             # Generate a random dark color in hexadecimal format
- {my $c = int(rand 3);
-  my @r = map {int rand 64} 1..3;
+ {my $c = int rand 3;
+  my @r = map {int rand 128} 1..3;
 
-  return sprintf "#%02X%02X%02X", 192+$r[0],     $r[1],     $r[2] if $c == 0;
-  return sprintf "#%02X%02X%02X",     $r[0], 192+$r[1],     $r[2] if $c == 1;
-         sprintf "#%02X%02X%02X",     $r[0],     $r[1], 192+$r[2];
+  return sprintf "#%02X%02X%02X", 2*$r[0],   $r[1],   $r[2] if $c == 0;
+  return sprintf "#%02X%02X%02X",   $r[0], 2*$r[1],   $r[2] if $c == 1;
+         sprintf "#%02X%02X%02X",   $r[0],   $r[1], 2*$r[2];
  }
 
 my sub distance($$$$)                                                           # Manhattan distance between two points
