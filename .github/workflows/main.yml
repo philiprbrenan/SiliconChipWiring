@@ -1,4 +1,4 @@
-# Test 2024-04-08 at 22:55:24
+# Test 2024-04-09 at 02:04:08
 
 name: Test
 
@@ -59,7 +59,6 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        #mkdir png/
         perl -Idtt/lib -Igh/lib -M"Data::Table::Text" -e"Data::Table::Text::postProcessImagesForDocumentation"
 
     - uses: actions/upload-artifact@v4
