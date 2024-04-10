@@ -1673,7 +1673,7 @@ END
  }
 
 #latest:;
-if (1)                                                                          #Tprint #TprintWire #TprintCode #TprintCode
+if (1)                                                                          #Tprint #TprintWire #TprintCode #TprintInOrder
  {my      $d = new(width=>2, height=>2);
   my $a = $d->wire(x=>1, y=>1, X=>2, Y=>1, n=>'a');
   my $b = $d->wire(x=>1, y=>2, X=>2, Y=>2, n=>'b');
@@ -1687,6 +1687,12 @@ END
   is_deeply($d->printCode,, <<END);
 \$d->wire(x=> 1, y=> 1, X=> 2, Y=> 1);
 \$d->wire(x=> 1, y=> 2, X=> 2, Y=> 2);
+END
+  is_deeply($d->printInOrder, <<END);
+Length: 10
+   x,   y      X,   Y   L  Name    Path
+   1,   1      2,   1   1  a       4,4,0  5,4,0  6,4,0  7,4,0  8,4
+   1,   2      2,   2   1  b       4,8,0  5,8,0  6,8,0  7,8,0  8,8
 END
  }
 
