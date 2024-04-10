@@ -1673,7 +1673,7 @@ END
  }
 
 #latest:;
-if (1)                                                                          #Tprint #TprintWire
+if (1)                                                                          #Tprint #TprintWire #TprintCode #TprintCode
  {my      $d = new(width=>2, height=>2);
   my $a = $d->wire(x=>1, y=>1, X=>2, Y=>1, n=>'a');
   my $b = $d->wire(x=>1, y=>2, X=>2, Y=>2, n=>'b');
@@ -1684,6 +1684,10 @@ Length: 10
    1,   2      2,   2   1  b       4,8,0  5,8,0  6,8,0  7,8,0  8,8
 END
   is_deeply($d->printWire($a), "   1,   1      2,   1   1  a       4,4,0  5,4,0  6,4,0  7,4,0  8,4");
+  is_deeply($d->printCode,, <<END);
+\$d->wire(x=> 1, y=> 1, X=> 2, Y=> 1);
+\$d->wire(x=> 1, y=> 2, X=> 2, Y=> 2);
+END
  }
 
 #latest:;
@@ -1872,7 +1876,7 @@ if (1)
    ]);
  }
 
-latest:;
+#latest:;
 if (1)                                                                          #Tnew #Twire #TtotalLength
  {my $d = new(width=>90, height=>20);
      $d->wire(x=> 9, y=>14, X=>50, Y=> 5);
