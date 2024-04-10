@@ -2,40 +2,40 @@
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
 <svg height="100%" viewBox="0 0 5 4" width="100%" background-color="none" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 
-<path d="M 0.25 1.25 L 0 1.25 L 0 0.5 L 0.25 0.5 Z" fill="#2120A0" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
-<path d="M 0.25 0.75 L 2.25 0.75 L 2.25 0.5 L 0.25 0.5 Z" fill="#2120A0" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
-<path d="M 2.25 0.75 L 2 0.75 L 2 1.25 L 2.25 1.25 Z" fill="#2120A0" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 0.25 1.25 L 0 1.25 L 0 0.5 L 0.25 0.5 Z" fill="#54BA2F" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 0.25 0.75 L 2.25 0.75 L 2.25 0.5 L 0.25 0.5 Z" fill="#54BA2F" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 2.25 0.75 L 2 0.75 L 2 1.25 L 2.25 1.25 Z" fill="#54BA2F" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
 <rect fill="darkGreen" height="0.25" opacity="0.75" stroke="transparent" stroke-width="0.5" width="0.25" x="0" y="1"/>
 <rect fill="darkRed" height="0.25" opacity="0.75" stroke="transparent" stroke-width="0.5" width="0.25" x="2" y="1"/>
-<path d="M 1.25 0.25 L 0.5 0.25 L 0.5 0 L 1.25 0 Z" fill="#7C1A6C" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
-<path d="M 0.75 0.25 L 0.5 0.25 L 0.5 2.25 L 0.75 2.25 Z" fill="#7C1A6C" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
-<path d="M 0.75 2.25 L 1.25 2.25 L 1.25 2 L 0.75 2 Z" fill="#7C1A6C" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 1.25 0.25 L 0.5 0.25 L 0.5 0 L 1.25 0 Z" fill="#682837" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 0.75 0.25 L 0.5 0.25 L 0.5 2.25 L 0.75 2.25 Z" fill="#682837" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 0.75 2.25 L 1.25 2.25 L 1.25 2 L 0.75 2 Z" fill="#682837" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
 <rect fill="darkGreen" height="0.25" opacity="0.75" stroke="transparent" stroke-width="0.5" width="0.25" x="1" y="0"/>
 <rect fill="darkRed" height="0.25" opacity="0.75" stroke="transparent" stroke-width="0.5" width="0.25" x="1" y="2"/>
-<path d="M 2.25 0.25 L 1.5 0.25 L 1.5 0 L 2.25 0 Z" fill="#607A76" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
-<path d="M 1.75 0.25 L 1.5 0.25 L 1.5 2.25 L 1.75 2.25 Z" fill="#607A76" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
-<path d="M 1.75 2.25 L 2.25 2.25 L 2.25 2 L 1.75 2 Z" fill="#607A76" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 2.25 0.25 L 1.5 0.25 L 1.5 0 L 2.25 0 Z" fill="#4946CC" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 1.75 0.25 L 1.5 0.25 L 1.5 2.25 L 1.75 2.25 Z" fill="#4946CC" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 1.75 2.25 L 2.25 2.25 L 2.25 2 L 1.75 2 Z" fill="#4946CC" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
 <rect fill="darkGreen" height="0.25" opacity="0.75" stroke="transparent" stroke-width="0.5" width="0.25" x="2" y="0"/>
 <rect fill="darkRed" height="0.25" opacity="0.75" stroke="transparent" stroke-width="0.5" width="0.25" x="2" y="2"/>
-<path d="M 0.25 2.25 L 0 2.25 L 0 1.5 L 0.25 1.5 Z" fill="#FC4B4E" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
-<path d="M 0.25 1.75 L 1.25 1.75 L 1.25 1.5 L 0.25 1.5 Z" fill="#FC4B4E" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
-<path d="M 1.25 1.5 L 1 1.5 L 1 1 L 1.25 1 Z" fill="#FC4B4E" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 0.25 2.25 L 0 2.25 L 0 1.5 L 0.25 1.5 Z" fill="#867B08" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 0.25 1.75 L 1.25 1.75 L 1.25 1.5 L 0.25 1.5 Z" fill="#867B08" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 1.25 1.5 L 1 1.5 L 1 1 L 1.25 1 Z" fill="#867B08" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
 <rect fill="darkGreen" height="0.25" opacity="0.75" stroke="transparent" stroke-width="0.5" width="0.25" x="0" y="2"/>
 <rect fill="darkRed" height="0.25" opacity="0.75" stroke="transparent" stroke-width="0.5" width="0.25" x="1" y="1"/>
-<path d="M 0.25 3.25 L 0 3.25 L 0 2.5 L 0.25 2.5 Z" fill="#304ACA" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
-<path d="M 0.25 2.75 L 3.75 2.75 L 3.75 2.5 L 0.25 2.5 Z" fill="#304ACA" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
-<path d="M 3.75 2.5 L 3.5 2.5 L 3.5 0 L 3.75 0 Z" fill="#304ACA" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 0.25 3.25 L 0 3.25 L 0 2.5 L 0.25 2.5 Z" fill="#E6033E" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 0.25 2.75 L 3.75 2.75 L 3.75 2.5 L 0.25 2.5 Z" fill="#E6033E" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 3.75 2.5 L 3.5 2.5 L 3.5 0 L 3.75 0 Z" fill="#E6033E" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
 <path d="M 3.58333333333333 2.58333333333333 L 3.66666666666667 2.58333333333333 L 3.66666666666667 2.66666666666667 L 3.58333333333333 2.66666666666667 Z" fill="transparent" opacity="0.75" stroke="black" stroke-width="0.0208333333333333"/>
-<path d="M 3.75 0.25 L 4.25 0.25 L 4.25 0 L 3.75 0 Z" fill="#304ACA" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 3.75 0.25 L 4.25 0.25 L 4.25 0 L 3.75 0 Z" fill="#E6033E" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
 <rect fill="darkGreen" height="0.25" opacity="0.75" stroke="transparent" stroke-width="0.5" width="0.25" x="0" y="3"/>
 <rect fill="darkRed" height="0.25" opacity="0.75" stroke="transparent" stroke-width="0.5" width="0.25" x="4" y="0"/>
-<path d="M 1 3.25 L 1.75 3.25 L 1.75 3 L 1 3 Z" fill="#5D04D0" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
-<path d="M 1.75 3.25 L 1.5 3.25 L 1.5 3.75 L 1.75 3.75 Z" fill="#5D04D0" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
-<path d="M 1.75 3.75 L 2.75 3.75 L 2.75 3.5 L 1.75 3.5 Z" fill="#5D04D0" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 1 3.25 L 1.75 3.25 L 1.75 3 L 1 3 Z" fill="#681E20" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 1.75 3.25 L 1.5 3.25 L 1.5 3.75 L 1.75 3.75 Z" fill="#681E20" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 1.75 3.75 L 2.75 3.75 L 2.75 3.5 L 1.75 3.5 Z" fill="#681E20" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
 <path d="M 1.58333333333333 3.58333333333333 L 1.66666666666667 3.58333333333333 L 1.66666666666667 3.66666666666667 L 1.58333333333333 3.66666666666667 Z" fill="transparent" opacity="0.75" stroke="black" stroke-width="0.0208333333333333"/>
-<path d="M 2.75 3.5 L 2.5 3.5 L 2.5 0 L 2.75 0 Z" fill="#5D04D0" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 2.75 3.5 L 2.5 3.5 L 2.5 0 L 2.75 0 Z" fill="#681E20" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
 <path d="M 2.58333333333333 3.58333333333333 L 2.66666666666667 3.58333333333333 L 2.66666666666667 3.66666666666667 L 2.58333333333333 3.66666666666667 Z" fill="transparent" opacity="0.75" stroke="black" stroke-width="0.0208333333333333"/>
-<path d="M 2.75 0.25 L 3.25 0.25 L 3.25 0 L 2.75 0 Z" fill="#5D04D0" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
+<path d="M 2.75 0.25 L 3.25 0.25 L 3.25 0 L 2.75 0 Z" fill="#681E20" opacity="0.75" stroke="transparent" stroke-width="0.5"/>
 <rect fill="darkGreen" height="0.25" opacity="0.75" stroke="transparent" stroke-width="0.5" width="0.25" x="1" y="3"/>
 <rect fill="darkRed" height="0.25" opacity="0.75" stroke="transparent" stroke-width="0.5" width="0.25" x="3" y="0"/>
 <line dominant-baseline="hanging" fill="transparent" font-size="0.25" opacity="0.2" stroke="black" stroke-width="0.015625" text-anchor="start" x1="0" x2="0" y1="0" y2="4"/>
