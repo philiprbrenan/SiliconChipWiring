@@ -1,4 +1,4 @@
-# Test 2024-04-10 at 04:45:49
+# Test 2024-04-10 at 21:58:37
 
 name: Test
 
@@ -55,12 +55,6 @@ jobs:
       run:
         tree
 
-    - name: Upload images
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        perl -Idtt/lib -Igh/lib -M"Data::Table::Text" -e"Data::Table::Text::postProcessImagesForDocumentation(log=>1)"
-
     - uses: actions/upload-artifact@v4
       with:
         name: Wiring
@@ -68,4 +62,10 @@ jobs:
           gds
           png
           svg
+
+    - name: Upload images
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        perl -Idtt/lib -Igh/lib -M"Data::Table::Text" -e"Data::Table::Text::postProcessImagesForDocumentation(log=>1)"
 
