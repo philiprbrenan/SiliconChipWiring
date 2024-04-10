@@ -88,6 +88,7 @@ sub wire($%)                                                                    
   defined($X) or confess "X";
   defined($Y) or confess "Y";
   $x == $X and $y == $Y and confess "Start and end of connection are in the same cell";
+#say STDERR "IIII ", dump($diagram->levels) if $options{debug};
 
   my $w = genHash(__PACKAGE__,                                                  # Wire
     x => $x,                                                                    # Start x position of wire
@@ -124,12 +125,13 @@ sub wire($%)                                                                    
    {my ($l) = @_;                                                               # Level
     my $lx = $diagram->levelX->{$l};                                            # X cells available on this level
     my $ly = $diagram->levelY->{$l};                                            # Y cells available on this level
-    fillInAroundVia($_, $x, $y, $l, 22) for $lx, $ly;                            # Add metal around via so it can connect to the crossbars
+    fillInAroundVia($_, $x, $y, $l, 22) for $lx, $ly;                           # Add metal around via so it can connect to the crossbars
     fillInAroundVia($_, $X, $Y, $l, 22) for $lx, $ly;
-    my @p = $diagram->findShortestPath($lx, $ly, [$x*4, $y*4], [$X*4, $Y*4]);
+    my @p = $diagram->findShortestPath($lx, $ly, [$x*4, $y*4], [$X*4, $Y*4], %options);
     if (@p and !@P || @p < @P)                                                  # Shorter path on this level
      {@P = @p;
-      $w->l = $l;
+      $L = $l;
+      #say STDERR "LLLL ", dump($L) if $options{debug};
      }
     fillInAroundVia($_, $x, $y, $l, undef) for $lx, $ly;                        # Remove metal
     fillInAroundVia($_, $X, $Y, $l, undef) for $lx, $ly;
@@ -137,20 +139,23 @@ sub wire($%)                                                                    
 
   for my $l(1..$diagram->levels)                                                # Find best level to place wire
    {pathOnLevel($l);
+    last if @P and $options{placeFirst};                                        # Exit as soon as a level is found that can take the wire regardless of length. This allows us to find the wires that force the creation of new layers.
    }
 
   if (!@P)                                                                      # Have to create a new level for this wire
    {my $l = $diagram->newLevel;
+#    say STDERR "MMMMM ", dump($L) if $options{debug};
     pathOnLevel($l);
    }
-  @P or confess <<"END" =~ s/\n(.)/ $1/gsr;                                     # The new layer should always resolve thos problem, but just in case.
+  @P or confess <<"END" =~ s/\n(.)/ $1/gsr;                                     # The new layer should always resolve this problem, but just in case.
 Cannot connect [$x, $y] to [$X, $Y]
 END
 
-  if (@P)
-   {my $l = $w->l;
+  if (@P)                                                                       # Remove path from further consideration
+   {my $l = $w->l = $L;
     my $lx = $diagram->levelX->{$l};                                            # X cells available on this level
     my $ly = $diagram->levelY->{$l};                                            # Y cells available on this level
+#    say STDERR "NNNNN", dump($L) if $options{debug};
     for my $p(@P)                                                               # Remove cells occupied by path so that they are not used ion some other path
      {my ($x, $y, $d) = @$p;                                                    # Point on wire, direction 0 - x, 1 y to step to next point
       if (defined $d)                                                           # There is no step indicator on the last point of the path because there is nowhere to step from it. The area immediately around the via is cleared when the temporary cells added to connect the via to the neighboring bus are deleted.
@@ -164,6 +169,7 @@ END
      }
    }
 
+#  say STDERR "OOOO", dump($L, \@P) if $options{debug};
   $w->p = [@P];                                                                 # Path followed by wire.
   push $diagram->wires->@*, $w;                                                 # Save wire
   $w                                                                            # The wire
@@ -186,8 +192,8 @@ sub totalLength($)                                                              
   $l
  }
 
-sub findShortestPath($$$$$)                                                     # Find the shortest path between two points in a two dimensional image stepping only from/to adjacent marked cells. The permissible steps are given in two imahes, one for x steps and one for y steps.
- {my ($diagram, $imageX, $imageY, $start, $finish) = @_;                        # Diagram, ImageX{x}{y}, ImageY{x}{y}, start point, finish point
+sub findShortestPath($$$$$%)                                                    # Find the shortest path between two points in a two dimensional image stepping only from/to adjacent marked cells. The permissible steps are given in two imahes, one for x steps and one for y steps.
+ {my ($diagram, $imageX, $imageY, $start, $finish, %options) = @_;              # Diagram, ImageX{x}{y}, ImageY{x}{y}, start point, finish point, options
   my %ix = %$imageX; my %iy = %$imageY;                                         # Shorten names
 
   my ($x, $y) = @$start;                                                        # Start point
@@ -204,25 +210,39 @@ END
   my %b; $b   {$x}{$y} = 1;                                                     # Shortest path to this cell from start via breadth first search
   my %d; $d{1}{$x}{$y} = 1;                                                     # Cells at depth from start
 
-  for my $d(2..1e6)                                                             # Depth of search
-   {last unless keys %o;                                                        # Keep going until we cannot go any further
-    my %n;                                                                      # Cells at new edge of search
-    for   my $x(sort keys %o)                                                   # Current frontier x
-     {for my $y(sort keys $o{$x}->%*)                                           # Current frontier y
-       {my sub search($$)                                                       # Search from a point in the current frontier
-         {my ($x, $y) = @_;                                                     # Point to test
-          if ($ix{$x}{$y} || $iy{$x}{$y} and !exists $b{$x}{$y})                # Located a new unclassified cell
-           {$d{$d}{$x}{$y} = $n{$x}{$y} = $b{$x}{$y} = $d;                      # Set depth for cell and record is as being at that depth
-           }
-         }
-        search($x-1, $y);   search($x+1, $y);                                   # Search for a step in x
-        search($x,   $y-1); search($x,   $y+1);                                 # Search for a step in y
-       }
-     }
-    %o = %n;                                                                    # The new frontier becomes the settled fontoer
-   }
+  my sub search                                                                 # Search for the shortest path
+   {for my $d(2..1e6)                                                           # Depth of search
+     {last unless keys %o;                                                      # Keep going until we cannot go any further
+#say STDERR "AAAA $d" if $options{debug};
 
+      my %n;                                                                    # Cells at new edge of search
+      for   my $x(sort keys %o)                                                 # Current frontier x
+       {for my $y(sort keys $o{$x}->%*)                                         # Current frontier y
+         {my sub check($$)                                                      # Search from a point in the current frontier
+           {my ($x, $y) = @_;                                                   # Point to test
+            if ($ix{$x}{$y} || $iy{$x}{$y} and !exists $b{$x}{$y})              # Located a new unclassified cell
+             {$d{$d}{$x}{$y} = $n{$x}{$y} = $b{$x}{$y} = $d;                    # Set depth for cell and record is as being at that depth
+              if ($x == $X && $y == $Y)                                         # Reached target
+               {#say STDERR "BBBB", &printHash(\%b) if $options{debug};
+                return 1;                                                       # Reached target
+               }
+             }
+           }
+          my $f = check($x-1, $y)   || check($x+1, $y) ||                       # Check in x
+                  check($x,   $y-1) || check($x,   $y+1);                       # Check in Y
+          return 1 if $f;                                                       # Reached target
+         }
+       }
+#     say STDERR "AAAA", &printHash(\%n) if $options{debug};
+      %o = %n;                                                                  # The new frontier becomes the settled fontoer
+     }
+    ''
+   }
+  my $f = search;                                                               # Search for the shortest path to the target point
+
+#  say STDERR "CCCC f=$f ", dump($b{$X}{$Y}), "  ", &printHash(\%b) if $options{debug};
   return () unless my $N = $b{$X}{$Y};                                          # Return empty list if there is no path from the start to the finish
+#  say STDERR "DDDD" if $options{debug};
 # say STDERR &printHash(\%b);
 
   my sub path($)                                                                # Finds a shortest path and returns the number of changes of direction and the path itself
@@ -250,6 +270,7 @@ END
    }
   my ($q, $Q) = path(1);                                                        # Favor X at start of back track from finish to start
   my ($p, $P) = path(0);                                                        # Favor Y at start of back track from finish to start
+  #say STDERR "EEEE", dump($Q, $P) if $options{debug};
   $q < $p ? @$Q : @$P                                                           # Path with least changes of direction
  }
 
@@ -259,11 +280,38 @@ my sub wireHeader()                                                             
  {"   x,   y      X,   Y   L  Name    Path";
  }
 
+sub printCode($%)                                                               # Print code to create a diagram
+ {my ($d, %options) = @_;                                                       # Drawing, options
+  my @t;
+  for my $w($d->wires->@*)
+   {my ($x, $y, $X, $Y) = @$w{qw(x y X Y)};
+    push @t, sprintf "\$d->wire(x=>%2d, y=>%2d, X=>%2d, Y=>%2d);", $x, $y, $X, $Y;
+   }
+  join "\n", @t, ''
+ }
+
 sub print($%)                                                                   # Print a diagram
  {my ($d, %options) = @_;                                                       # Drawing, options
   my @t; my $l = 0;
   push @t, wireHeader;
   for my $w($d->wires->@*)
+   {push @t, $d->printWire($w);
+    $l += $d->length($w);
+   }
+  unshift @t, "Length: $l";
+  join "\n", @t, ''
+ }
+
+sub printInOrder($%)                                                            # Print a diagram
+ {my ($d, %options) = @_;                                                       # Drawing, options
+  my @t; my $l = 0;
+  push @t, wireHeader;
+  for my $w(
+            sort {$a->x <=> $b->x}                                              # Sort wires into order
+            sort {$a->y <=> $b->y}
+            sort {$a->X <=> $b->X}
+            sort {$a->Y <=> $b->Y}
+            $d->wires->@*)
    {push @t, $d->printWire($w);
     $l += $d->length($w);
    }
@@ -301,7 +349,7 @@ sub printHash($)                                                                
  {my ($x) = @_;                                                                 # Two dimensional hash
   my %x = $x->%*;
 
-  my $w; my $h;
+  my $w = 0; my $h = 0;
   for   my $x(sort keys %x)                                                     # Size of image
    {for my $y(sort keys $x{$x}->%*)
      {$w = maximum($w, $x);
@@ -312,7 +360,7 @@ sub printHash($)                                                                
   my @s = (' ' x (4+$w)) x (4+$h);                                              # Empty image
   for   my $x(sort keys %x)                                                     # Load image
    {for my $y(sort keys $x{$x}->%*)
-     {substr($s[$y], $x, 1) = substr("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", $x{$x}{$y}, 1);
+     {substr($s[$y], $x, 1) = substr("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", $x{$x}{$y} % 30, 1);
      }
    }
   my $s = join "\n", @s, '';
@@ -1654,6 +1702,17 @@ if (1)                                                                          
   is_deeply($d->totalLength, 119);
   is_deeply($d->levels, 2);
 
+  is_deeply($d->printInOrder, <<END);
+Length: 119
+   x,   y      X,   Y   L  Name    Path
+   0,   0      3,   0   2  g       0,0,1  0,1,1  0,2,0  1,2,0  2,2,0  3,2,0  4,2,0  5,2,0  6,2,0  7,2,0  8,2,0  9,2,0  10,2,0  11,2,0  12,2,1  12,1,1  12,0
+   0,   1      2,   1   1  a       0,4,1  0,3,1  0,2,0  1,2,0  2,2,0  3,2,0  4,2,0  5,2,0  6,2,0  7,2,0  8,2,1  8,3,1  8,4
+   0,   2      1,   1   1  e       0,8,1  0,7,1  0,6,0  1,6,0  2,6,0  3,6,0  4,6,1  4,5,1  4,4
+   0,   3      4,   0   1  f       0,12,1  0,11,1  0,10,0  1,10,0  2,10,0  3,10,0  4,10,0  5,10,0  6,10,0  7,10,0  8,10,0  9,10,0  10,10,0  11,10,0  12,10,0  13,10,0  14,10,1  14,9,1  14,8,1  14,7,1  14,6,1  14,5,1  14,4,1  14,3,1  14,2,1  14,1,1  14,0,0  15,0,0  16,0
+   1,   0      1,   2   1  b       4,0,0  3,0,0  2,0,1  2,1,1  2,2,1  2,3,1  2,4,1  2,5,1  2,6,1  2,7,1  2,8,0  3,8,0  4,8
+   1,   3      3,   0   1  F       4,12,0  5,12,0  6,12,1  6,13,1  6,14,0  7,14,0  8,14,0  9,14,0  10,14,1  10,13,1  10,12,1  10,11,1  10,10,1  10,9,1  10,8,1  10,7,1  10,6,1  10,5,1  10,4,1  10,3,1  10,2,1  10,1,1  10,0,0  11,0,0  12,0
+   2,   0      2,   2   1  c       8,0,0  7,0,0  6,0,1  6,1,1  6,2,1  6,3,1  6,4,1  6,5,1  6,6,1  6,7,1  6,8,0  7,8,0  8,8
+END
 
   is_deeply(printPath($a->p), <<END);
 .........
@@ -1811,6 +1870,78 @@ if (1)
   [[14, 9, 1], [14,  0, 0], 1],
   [[15, 0, 0], [16,  0],    1],
    ]);
+ }
+
+latest:;
+if (1)                                                                          #Tnew #Twire #TtotalLength
+ {my $d = new(width=>90, height=>20);
+     $d->wire(x=> 9, y=>14, X=>50, Y=> 5);
+     $d->wire(x=>13, y=> 5, X=>50, Y=>12);
+     $d->wire(x=>13, y=> 8, X=>54, Y=> 5);
+     $d->wire(x=> 5, y=>11, X=>42, Y=> 5);
+     $d->wire(x=> 9, y=> 2, X=>42, Y=>12);
+     $d->wire(x=>13, y=> 2, X=>50, Y=> 7);
+     $d->wire(x=>13, y=>11, X=>54, Y=>10);
+     $d->wire(x=>13, y=>14, X=>54, Y=>15);
+     $d->wire(x=> 5, y=>14, X=>42, Y=>10);
+     $d->wire(x=>17, y=> 2, X=>58, Y=> 2);
+     $d->wire(x=> 9, y=> 8, X=>46, Y=> 7);
+     $d->wire(x=> 9, y=>11, X=>46, Y=>12);
+     $d->wire(x=> 5, y=> 8, X=>38, Y=>12);
+     $d->wire(x=> 9, y=> 5, X=>46, Y=> 5);
+     $d->wire(x=> 5, y=> 5, X=>38, Y=> 7);
+     $d->wire(x=> 5, y=> 2, X=>38, Y=> 2);
+     $d->wire(x=>37, y=> 7, X=>58, Y=> 4);
+     $d->wire(x=>41, y=> 7, X=>62, Y=> 4);
+     $d->wire(x=>33, y=> 9, X=>50, Y=> 3);
+     $d->wire(x=>41, y=>12, X=>62, Y=>10);
+     $d->wire(x=>45, y=> 2, X=>62, Y=> 8);
+     $d->wire(x=>33, y=>14, X=>50, Y=> 9);
+     $d->wire(x=>45, y=> 7, X=>62, Y=>12);
+     $d->wire(x=>37, y=> 4, X=>54, Y=> 8);
+     $d->wire(x=>37, y=> 9, X=>54, Y=>13);
+     $d->wire(x=>41, y=> 2, X=>62, Y=> 2);
+     $d->wire(x=>33, y=> 2, X=>46, Y=> 9);
+     $d->wire(x=>33, y=> 7, X=>46, Y=>14);
+     $d->wire(x=>49, y=> 7, X=>66, Y=> 4);
+     $d->wire(x=>33, y=>12, X=>50, Y=>14);
+     $d->wire(x=>45, y=>12, X=>62, Y=>14);
+     $d->wire(x=>49, y=>12, X=>66, Y=>10);
+     $d->wire(x=>53, y=> 2, X=>66, Y=> 8);
+     $d->wire(x=>37, y=> 2, X=>54, Y=> 3);
+     $d->wire(x=>53, y=> 7, X=>66, Y=>12);
+     $d->wire(x=>29, y=> 7, X=>42, Y=> 3);
+     $d->wire(x=>29, y=>12, X=>42, Y=> 8);
+     $d->wire(x=>49, y=> 2, X=>66, Y=> 2);
+     $d->wire(x=>57, y=> 7, X=>70, Y=> 4);
+     $d->wire(x=>53, y=>12, X=>66, Y=>14);
+     $d->wire(x=>57, y=>12, X=>70, Y=>10);
+     $d->wire(x=>61, y=> 2, X=>70, Y=> 8);
+     $d->wire(x=>17, y=>14, X=>22, Y=> 5);
+     $d->wire(x=>25, y=> 2, X=>34, Y=> 7);
+     $d->wire(x=>29, y=> 4, X=>38, Y=> 9);
+     $d->wire(x=>29, y=> 9, X=>38, Y=>14);
+     $d->wire(x=>33, y=> 4, X=>46, Y=> 3);
+     $d->wire(x=>21, y=>14, X=>30, Y=>10);
+     $d->wire(x=>29, y=>14, X=>42, Y=>14);
+     $d->wire(x=>57, y=> 2, X=>70, Y=> 2);
+     $d->wire(x=>65, y=> 7, X=>74, Y=> 4);
+     $d->wire(x=>21, y=> 7, X=>30, Y=> 5);
+     $d->wire(x=>29, y=> 2, X=>38, Y=> 4);
+     $d->wire(x=>65, y=>12, X=>74, Y=>10);
+     $d->wire(x=>69, y=> 2, X=>74, Y=> 8);
+     $d->wire(x=>21, y=> 2, X=>26, Y=> 7);
+     $d->wire(x=>25, y=> 4, X=>34, Y=> 5);
+     $d->wire(x=>69, y=> 7, X=>74, Y=>12);
+     $d->wire(x=>81, y=> 2, X=>82, Y=>11);
+     $d->wire(x=>21, y=>12, X=>30, Y=>12);
+     $d->wire(x=>65, y=> 2, X=>74, Y=> 2);
+     $d->wire(x=>21, y=> 9, X=>26, Y=>12);
+     $d->wire(x=>73, y=> 7, X=>78, Y=> 4);
+     $d->wire(x=>77, y=>12, X=>82, Y=> 9);
+     $d->wire(x=>69, y=>12, X=>74, Y=>14);
+     $d->wire(x=>21, y=> 4, X=>26, Y=> 5);
+     $d->wire(x=>77, y=> 7, X=>82, Y=> 6, debug=>1);
  }
 
 &done_testing;
