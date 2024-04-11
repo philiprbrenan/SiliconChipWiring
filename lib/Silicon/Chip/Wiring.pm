@@ -43,7 +43,6 @@ sub new(%)                                                                      
   defined($h) or confess "h";
 
   my $d = genHash(__PACKAGE__,                                                  # Wiring diagram
-    %options,                                                                   # Options
     log    => $options{log},                                                    # Log activity if true
     width  => $options{width},                                                  # Width of chip
     height => $options{height},                                                 # Height of chip
