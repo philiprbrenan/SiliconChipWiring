@@ -8,7 +8,7 @@ package Silicon::Chip::Wiring;
 our $VERSION = 20240331;
 use warnings FATAL => qw(all);
 use strict;
-use Carp;
+use Carp qw(confess cluck);
 use Data::Dump qw(dump);
 use Data::Table::Text qw(:all);
 use Svg::Simple;
@@ -64,7 +64,7 @@ sub newLevel($%)                                                                
   defined($h) or confess "h";
 
   my $l = ++$diagram->levels;                                                   # Next level
-
+  cluck "Created a new level: $l";
   my %lx; my %ly;
   for   my $x(0..$diagram->width)                                               # Load the next level
    {for my $y(0..$diagram->height)
