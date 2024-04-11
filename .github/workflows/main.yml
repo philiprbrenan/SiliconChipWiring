@@ -1,4 +1,4 @@
-# Test 2024-04-11 at 02:27:17
+# Test 2024-04-11 at 03:26:06
 
 name: Test
 
@@ -67,7 +67,7 @@ jobs:
         aws configure set default.region us-east-2
         aws configure set aws_access_key_id     ${{ secrets.AWS_ACCESS_KEY_ID     }}
         aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws s3 sync . s3://vanina-andrea/SiliconChipWiring/
+        aws s3 sync SiliconChipWiring/lib/Silicon/Chip/ s3://vanina-andrea/SiliconChipWiring/lib/Silicon/Chip/
 
     - uses: actions/upload-artifact@v4
       with:
