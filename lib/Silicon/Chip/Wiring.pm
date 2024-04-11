@@ -44,6 +44,7 @@ sub new(%)                                                                      
 
   my $d = genHash(__PACKAGE__,                                                  # Wiring diagram
     %options,                                                                   # Options
+    log    => $options{log},                                                    # Log activity if true
     width  => $options{width},                                                  # Width of chip
     height => $options{height},                                                 # Height of chip
     wires  => [],                                                               # Wires on diagram
@@ -58,23 +59,28 @@ sub new(%)                                                                      
 
 sub newLevel($%)                                                                #P Make a new level and return its number
  {my ($diagram, %options) = @_;                                                 # Diagram, Options
-
-  my ($w, $h) = @$diagram{qw(width height)};
+  my $d = $diagram;
+  my ($w, $h) = @$d{qw(width height)};
   defined($w) or confess "w";
   defined($h) or confess "h";
 
-  my $l = ++$diagram->levels;                                                   # Next level
-  cluck timeStamp." Created a new level: $l";
+  my $l = ++$d->levels;                                                         # Next level
+
   my %lx; my %ly;
-  for   my $x(0..$diagram->width)                                               # Load the next level
-   {for my $y(0..$diagram->height)
+  for   my $x(0..$d->width)                                                     # Load the next level
+   {for my $y(0..$d->height)
      {$lx{$x*4+$_}{$y*4+2}  = $l for 0..3;                                      # Each cell consists of 16 small squares. The via is in position 0,0.  The x connectors run along y == 2. The y connectors run along x == 2.  This arrangement allows to add the start and end via and its vicinity when creating connections
       $ly{$x*4+2} {$y*4+$_} = $l for 0..3;
      }
    }
 
-  $diagram->levelX->{$l} = {%lx};                                               # X cells available in new level
-  $diagram->levelY->{$l} = {%ly};                                               # Y cells available in new level
+  $d->levelX->{$l} = {%lx};                                                     # X cells available in new level
+  $d->levelY->{$l} = {%ly};                                                     # Y cells available in new level
+
+  if ($l > 1 and $d->log)                                                       # Details of the new level
+   {cluck timeStamp." Created a new level: $l";
+    say STDERR $d->printCode;
+   }
 
   $l                                                                            # Level number
  }
@@ -283,6 +289,7 @@ my sub wireHeader()                                                             
 sub printCode($%)                                                               # Print code to create a diagram
  {my ($d, %options) = @_;                                                       # Drawing, options
   my @t;
+  push @t, sprintf "Silicon::Chip::Wiring::new(width=>%d, height=>%d);", $d->width//0, $d->height;
   for my $w($d->wires->@*)
    {my ($x, $y, $X, $Y) = @$w{qw(x y X Y)};
     push @t, sprintf "\$d->wire(x=>%2d, y=>%2d, X=>%2d, Y=>%2d);", $x, $y, $X, $Y;
@@ -1685,6 +1692,7 @@ Length: 10
 END
   is_deeply($d->printWire($a), "   1,   1      2,   1   1  a       4,4,0  5,4,0  6,4,0  7,4,0  8,4");
   is_deeply($d->printCode,, <<END);
+Silicon::Chip::Wiring::new(width=>2, height=>2);
 \$d->wire(x=> 1, y=> 1, X=> 2, Y=> 1);
 \$d->wire(x=> 1, y=> 2, X=> 2, Y=> 2);
 END
@@ -1698,7 +1706,7 @@ END
 
 #latest:;
 if (1)                                                                          #Tnew #Twire #TtotalLength
- {my      $d = new(width=>4, height=>3);
+ {my      $d = new(width=>4, height=>3, log=>1);
   my $a = $d->wire(x=>0, y=>1, X=>2, Y=>1, n=>'a');
   my $b = $d->wire(x=>1, y=>0, X=>1, Y=>2, n=>'b');
   my $c = $d->wire(x=>2, y=>0, X=>2, Y=>2, n=>'c');
