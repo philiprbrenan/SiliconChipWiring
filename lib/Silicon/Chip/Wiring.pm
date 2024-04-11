@@ -612,7 +612,7 @@ use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
 @EXPORT_OK    = qw();
 %EXPORT_TAGS = (all=>[@EXPORT, @EXPORT_OK]);
 
-#svg https://raw.githubusercontent.com/philiprbrenan/SiliconChipWiring/main/lib/Silicon/Chip/svg/
+#svg https://vanina-andrea.s3.us-east-2.amazonaws.com/SiliconChipWiring/lib/Silicon/Chip/png/
 
 =pod
 
