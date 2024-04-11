@@ -1,4 +1,4 @@
-# Test 2024-04-11 at 02:11:32
+# Test 2024-04-11 at 02:15:08
 
 name: Test
 
@@ -63,12 +63,11 @@ jobs:
         perl -Idtt/lib -Igh/lib -M"Data::Table::Text" -e"Data::Table::Text::postProcessImagesForDocumentation(log=>1)"
 
     - name: S3 images
-      env:
-        AWS_ACCESS_KEY_ID:      ${{ secrets.AWS_ACCESS_KEY_ID     }}
-        AWS_SECRET_ACCESS_KEY:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_DEFAULT_REGION: us-east-2
-        AWS_DEFAULT_OUTPUT: json
       run: |
+        pip install awscli
+        aws configure set default.region us-east-2
+        aws configure set aws_access_key_id     ${{ secrets.AWS_ACCESS_KEY_ID     }}
+        aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws s3 sync . s3://vanina-andrea/SiliconChipWiring/
 
     - uses: actions/upload-artifact@v4
