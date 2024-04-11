@@ -1,4 +1,4 @@
-# Test 2024-04-11 at 02:15:08
+# Test 2024-04-11 at 02:20:07
 
 name: Test
 
@@ -64,7 +64,6 @@ jobs:
 
     - name: S3 images
       run: |
-        pip install awscli
         aws configure set default.region us-east-2
         aws configure set aws_access_key_id     ${{ secrets.AWS_ACCESS_KEY_ID     }}
         aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
