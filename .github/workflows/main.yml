@@ -1,4 +1,4 @@
-# Test 2024-04-11 at 00:25:31
+# Test 2024-04-11 at 02:00:08
 
 name: Test
 
@@ -61,6 +61,13 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         perl -Idtt/lib -Igh/lib -M"Data::Table::Text" -e"Data::Table::Text::postProcessImagesForDocumentation(log=>1)"
+
+    - name: S3 images
+      env:
+        AWS_ACCESS_KEY_ID:      ${{ secrets.AWS_ACCESS_KEY_ID     }}
+        AWS_SECRET_ACCESS_KEY:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      run: |
+        aws s3 sync . s3://vanina-andrea/SiliconChipWiring/
 
     - uses: actions/upload-artifact@v4
       with:
