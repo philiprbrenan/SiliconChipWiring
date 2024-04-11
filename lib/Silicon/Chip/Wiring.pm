@@ -43,6 +43,7 @@ sub new(%)                                                                      
   defined($h) or confess "h";
 
   my $d = genHash(__PACKAGE__,                                                  # Wiring diagram
+    options=> \%options,                                                        # Creation options
     log    => $options{log},                                                    # Log activity if true
     width  => $options{width},                                                  # Width of chip
     height => $options{height},                                                 # Height of chip
@@ -93,7 +94,7 @@ sub wire($%)                                                                    
   defined($X) or confess "X";
   defined($Y) or confess "Y";
   $x == $X and $y == $Y and confess "Start and end of connection are in the same cell";
-#say STDERR "IIII ", dump($diagram->levels) if $options{debug};
+  lll "Wire", scalar($diagram->wires->@*) if $diagram->options->{debug};
 
   my $w = genHash(__PACKAGE__,                                                  # Wire
     x => $x,                                                                    # Start x position of wire
@@ -136,7 +137,6 @@ sub wire($%)                                                                    
     if (@p and !@P || @p < @P)                                                  # Shorter path on this level
      {@P = @p;
       $L = $l;
-      #say STDERR "LLLL ", dump($L) if $options{debug};
      }
     fillInAroundVia($_, $x, $y, $l, undef) for $lx, $ly;                        # Remove metal
     fillInAroundVia($_, $X, $Y, $l, undef) for $lx, $ly;
@@ -149,7 +149,6 @@ sub wire($%)                                                                    
 
   if (!@P)                                                                      # Have to create a new level for this wire
    {my $l = $diagram->newLevel;
-#    say STDERR "MMMMM ", dump($L) if $options{debug};
     pathOnLevel($l);
    }
   @P or confess <<"END" =~ s/\n(.)/ $1/gsr;                                     # The new layer should always resolve this problem, but just in case.
@@ -160,7 +159,6 @@ END
    {my $l = $w->l = $L;
     my $lx = $diagram->levelX->{$l};                                            # X cells available on this level
     my $ly = $diagram->levelY->{$l};                                            # Y cells available on this level
-#    say STDERR "NNNNN", dump($L) if $options{debug};
     for my $p(@P)                                                               # Remove cells occupied by path so that they are not used ion some other path
      {my ($x, $y, $d) = @$p;                                                    # Point on wire, direction 0 - x, 1 y to step to next point
       if (defined $d)                                                           # There is no step indicator on the last point of the path because there is nowhere to step from it. The area immediately around the via is cleared when the temporary cells added to connect the via to the neighboring bus are deleted.
@@ -174,7 +172,6 @@ END
      }
    }
 
-#  say STDERR "OOOO", dump($L, \@P) if $options{debug};
   $w->p = [@P];                                                                 # Path followed by wire.
   push $diagram->wires->@*, $w;                                                 # Save wire
   $w                                                                            # The wire
@@ -218,7 +215,6 @@ END
   my sub search                                                                 # Search for the shortest path
    {for my $d(2..1e6)                                                           # Depth of search
      {last unless keys %o;                                                      # Keep going until we cannot go any further
-#say STDERR "AAAA $d" if $options{debug};
 
       my %n;                                                                    # Cells at new edge of search
       for   my $x(sort keys %o)                                                 # Current frontier x
@@ -228,8 +224,7 @@ END
             if ($ix{$x}{$y} || $iy{$x}{$y} and !exists $b{$x}{$y})              # Located a new unclassified cell
              {$d{$d}{$x}{$y} = $n{$x}{$y} = $b{$x}{$y} = $d;                    # Set depth for cell and record is as being at that depth
               if ($x == $X && $y == $Y)                                         # Reached target
-               {#say STDERR "BBBB", &printHash(\%b) if $options{debug};
-                return 1;                                                       # Reached target
+               {return 1;                                                       # Reached target
                }
              }
            }
@@ -245,10 +240,7 @@ END
    }
   my $f = search;                                                               # Search for the shortest path to the target point
 
-#  say STDERR "CCCC f=$f ", dump($b{$X}{$Y}), "  ", &printHash(\%b) if $options{debug};
   return () unless my $N = $b{$X}{$Y};                                          # Return empty list if there is no path from the start to the finish
-#  say STDERR "DDDD" if $options{debug};
-# say STDERR &printHash(\%b);
 
   my sub path($)                                                                # Finds a shortest path and returns the number of changes of direction and the path itself
    {my ($favorX) = @_;                                                          # Favor X step at start of back track if true else favor y
@@ -275,7 +267,6 @@ END
    }
   my ($q, $Q) = path(1);                                                        # Favor X at start of back track from finish to start
   my ($p, $P) = path(0);                                                        # Favor Y at start of back track from finish to start
-  #say STDERR "EEEE", dump($Q, $P) if $options{debug};
   $q < $p ? @$Q : @$P                                                           # Path with least changes of direction
  }
 
@@ -291,7 +282,7 @@ sub printCode($%)                                                               
   push @t, sprintf "Silicon::Chip::Wiring::new(width=>%d, height=>%d);", $d->width//0, $d->height;
   for my $w($d->wires->@*)
    {my ($x, $y, $X, $Y) = @$w{qw(x y X Y)};
-    push @t, sprintf "\$d->wire(x=>%2d, y=>%2d, X=>%2d, Y=>%2d);", $x, $y, $X, $Y;
+    push @t, sprintf "\$d->wire(x=>%4d, y=>%4d, X=>%4d, Y=>%4d);", $x, $y, $X, $Y;
    }
   join "\n", @t, ''
  }
@@ -1959,6 +1950,56 @@ if (1)                                                                          
      $d->wire(x=>69, y=>12, X=>74, Y=>14);
      $d->wire(x=>21, y=> 4, X=>26, Y=> 5);
      $d->wire(x=>77, y=> 7, X=>82, Y=> 6, debug=>1);
+ }
+
+
+latest:;
+if (1)                                                                          #
+ {my $d = Silicon::Chip::Wiring::new(width=>1528, height=>232, debug=>1);
+  $d->wire(x=>179, y=>216, X=>1324, Y=>39);
+  $d->wire(x=>179, y=>224, X=>1324, Y=>51);
+  $d->wire(x=>47,  y=>48,  X=>1144, Y=>224);
+  $d->wire(x=>47,  y=>40,  X=>1144, Y=>212);
+  $d->wire(x=>47,  y=>32,  X=>1144, Y=>200);
+  $d->wire(x=>191, y=>136, X=>1324, Y=>212);
+  $d->wire(x=>191, y=>128, X=>1324, Y=>200);
+  $d->wire(x=>191, y=>120, X=>1324, Y=>188);
+  $d->wire(x=>191, y=>112, X=>1324, Y=>176);
+  $d->wire(x=>191, y=>104, X=>1324, Y=>164);
+  $d->wire(x=>191, y=>96,  X=>1324, Y=>152);
+  $d->wire(x=>35,  y=>144, X=>1144, Y=>68);
+  $d->wire(x=>191, y=>88,  X=>1324, Y=>140);
+  $d->wire(x=>179, y=>88,  X=>1312, Y=>39);
+  $d->wire(x=>35,  y=>152, X=>1144, Y=>80);
+  $d->wire(x=>191, y=>80,  X=>1324, Y=>128);
+  $d->wire(x=>179, y=>96,  X=>1312, Y=>51);
+  $d->wire(x=>35,  y=>160, X=>1144, Y=>92);
+  $d->wire(x=>191, y=>72,  X=>1324, Y=>116);
+  $d->wire(x=>179, y=>104, X=>1312, Y=>63);
+  $d->wire(x=>35,  y=>168, X=>1144, Y=>104);
+  $d->wire(x=>191, y=>64,  X=>1324, Y=>104);
+  $d->wire(x=>179, y=>112, X=>1312, Y=>75);
+  $d->wire(x=>35,  y=>176, X=>1144, Y=>116);
+  $d->wire(x=>191, y=>56,  X=>1324, Y=>92);
+  $d->wire(x=>179, y=>120, X=>1312, Y=>87);
+  $d->wire(x=>35,  y=>184, X=>1144, Y=>128);
+  $d->wire(x=>47,  y=>192, X=>1192, Y=>212);
+  $d->wire(x=>191, y=>48,  X=>1324, Y=>80);
+  $d->wire(x=>179, y=>128, X=>1312, Y=>99);
+  $d->wire(x=>35,  y=>192, X=>1144, Y=>140);
+  $d->wire(x=>47,  y=>184, X=>1192, Y=>200);
+  $d->wire(x=>191, y=>40,  X=>1324, Y=>68);
+  $d->wire(x=>179, y=>136, X=>1312, Y=>111);
+  $d->wire(x=>35,  y=>200, X=>1144, Y=>152);
+  $d->wire(x=>47,  y=>176, X=>1192, Y=>188);
+  $d->wire(x=>191, y=>32,  X=>1324, Y=>56);
+  $d->wire(x=>179, y=>144, X=>1312, Y=>123);
+  $d->wire(x=>35,  y=>208, X=>1144, Y=>164);
+  $d->wire(x=>47,  y=>168, X=>1192, Y=>176);
+  $d->wire(x=>179, y=>152, X=>1312, Y=>135);
+  $d->wire(x=>179, y=>152, X=>1312, Y=>135);
+  $d->svg(svg=>q(aaa), pngs=>2);
+  say STDERR "AAAA ", dump($d->levels);
  }
 
 &done_testing;
