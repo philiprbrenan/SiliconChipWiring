@@ -64,7 +64,7 @@ sub newLevel($%)                                                                
   defined($h) or confess "h";
 
   my $l = ++$diagram->levels;                                                   # Next level
-  cluck "Created a new level: $l";
+  cluck timeStamp." Created a new level: $l";
   my %lx; my %ly;
   for   my $x(0..$diagram->width)                                               # Load the next level
    {for my $y(0..$diagram->height)
