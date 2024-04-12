@@ -133,8 +133,8 @@ sub wire($%)                                                                    
     my $ly = $diagram->levelY->{$l};                                            # Y cells available on this level
     fillInAroundVia($_, $x, $y, $l, 22) for $lx, $ly;                           # Add metal around via so it can connect to the crossbars
     fillInAroundVia($_, $X, $Y, $l, 22) for $lx, $ly;
-#   my @p = $diagram->findShortestPath($lx, $ly, [$x*4, $y*4], [$X*4, $Y*4], %options);
-    my @p = $diagram->findPath($lx, $ly, [$x*4, $y*4], [$X*4, $Y*4], %options);
+    my @p = $diagram->findShortestPath($lx, $ly, [$x*4, $y*4], [$X*4, $Y*4], %options);
+#   my @p = $diagram->findPath($lx, $ly, [$x*4, $y*4], [$X*4, $Y*4], %options);
     if (@p and !@P || @p < @P)                                                  # Shorter path on this level
      {@P = @p;
       $L = $l;
@@ -1720,9 +1720,9 @@ if (1)                                                                          
 .........
 ....S01..
 ......1..
-......001
-........1
-........F
+......1..
+......1..
+......00F
 END
   $d->gds2(svg=>q(xy1));
   $d->svg (svg=>q(xy1));
@@ -1761,16 +1761,125 @@ if (1)                                                                          
   is_deeply(printPath($a->p), <<END);
 .........
 .........
-..00001..
-..1...1..
-S01....0F
+000000001
+1.......1
+S.......F
 END
-  $d->svg (svg=>q(xy2), pngs=>2);
+ }
+
+#latest:;
+if (1)                                                                          #
+ {my      $d = new(width=>4, height=>3, log=>1);
+  my $b = $d->wire(x=>1, y=>0, X=>1, Y=>2, n=>'b');
+
+  is_deeply(printPath($b->p), <<END);
+..10S
+..1..
+..1..
+..1..
+..1..
+..1..
+..1..
+..1..
+..00F
+END
+ }
+
+#latest:;
+if (1)                                                                          #
+ {my      $d = new(width=>4, height=>3, log=>1);
+  my $c = $d->wire(x=>2, y=>0, X=>2, Y=>2, n=>'c');
+
+  is_deeply(printPath($c->p), <<END);
+......10S
+......1..
+......1..
+......1..
+......1..
+......1..
+......1..
+......1..
+......00F
+END
+ }
+
+#latest:;
+if (1)                                                                          #
+ {my      $d = new(width=>4, height=>3, log=>1);
+  my $e = $d->wire(x=>0, y=>2, X=>1, Y=>1, n=>'e');
+
+  is_deeply(printPath($e->p), <<END);
+.....
+.....
+.....
+.....
+..00F
+..1..
+..1..
+..1..
+S01..
+END
+ }
+
+#latest:;
+if (1)                                                                          #
+ {my      $d = new(width=>4, height=>3, log=>1);
+  my $f = $d->wire(x=>0, y=>3, X=>4, Y=>0, n=>'f');
+
+  is_deeply(printPath($f->p), <<END);
+..............00F
+..............1..
+..............1..
+..............1..
+..............1..
+..............1..
+..............1..
+..............1..
+..............1..
+..............1..
+000000000000001..
+1................
+S................
+END
+ }
+
+#latest:;
+if (1)                                                                          #
+ {my      $d = new(width=>4, height=>3, log=>1);
+  my $F = $d->wire(x=>1, y=>3, X=>3, Y=>0, n=>'F');
+
+  is_deeply(printPath($F->p), <<END);
+..........00F
+..........1..
+..........1..
+..........1..
+..........1..
+..........1..
+..........1..
+..........1..
+..........1..
+..........1..
+....0000001..
+....1........
+....S........
+END
+ }
+
+#latest:;
+if (1)                                                                          #
+ {my      $d = new(width=>4, height=>3, log=>1);
+  my $g = $d->wire(x=>0, y=>0, X=>3, Y=>0, n=>'g');
+
+  is_deeply(printPath($g->p), <<END);
+S...........F
+1...........1
+0000000000001
+END
  }
 
 #latest:;
 if (1)                                                                          #Tnew #Twire #TtotalLength
- {my      $d = new(width=>4, height=>3, log=>1);
+ {my      $d = new(width=>4, height=>3, log=>0);
   my $a = $d->wire(x=>0, y=>1, X=>2, Y=>1, n=>'a');
   my $b = $d->wire(x=>1, y=>0, X=>1, Y=>2, n=>'b');
   my $c = $d->wire(x=>2, y=>0, X=>2, Y=>2, n=>'c');
@@ -1883,7 +1992,6 @@ END
   $d->svg (svg=>q(xy2), pngs=>2);
   $d->gds2(svg=>q/xy2/);
  }
-exit;
 
 
 #    Original   Collapse
@@ -2030,7 +2138,7 @@ if (1)                                                                          
 
 
 #latest:;
-if (1)                                                                          #
+if (0)                                                                          #
  {my $d = Silicon::Chip::Wiring::new(width=>1528, height=>232, debug=>1);
   $d->wire(x=>179, y=>216, X=>1324, Y=>39);
   $d->wire(x=>179, y=>224, X=>1324, Y=>51);
@@ -2075,132 +2183,6 @@ if (1)                                                                          
   $d->wire(x=>179, y=>152, X=>1312, Y=>135);
   $d->wire(x=>179, y=>152, X=>1312, Y=>135);
   $d->svg(svg=>q(aaa), pngs=>2);
- }
-
-latest:;
-if (1)                                                                          #
- {my      $d = new(width=>4, height=>3, log=>1);
-  my $a = $d->wire(x=>0, y=>1, X=>2, Y=>1, n=>'a');
-
-  is_deeply(printPath($a->p), <<END);
-.........
-.........
-..00001..
-..1...1..
-S01...00F
-END
-  $d->svg (svg=>q(xy2), pngs=>2);
- }
-
-latest:;
-if (1)                                                                          #
- {my      $d = new(width=>4, height=>3, log=>1);
-  my $b = $d->wire(x=>1, y=>0, X=>1, Y=>2, n=>'b');
-
-  is_deeply(printPath($b->p), <<END);
-....S
-....1
-..100
-..1..
-..1..
-..1..
-..001
-....1
-....F
-END
- }
-
-latest:;
-if (1)                                                                          #
- {my      $d = new(width=>4, height=>3, log=>1);
-  my $c = $d->wire(x=>2, y=>0, X=>2, Y=>2, n=>'c');
-
-  is_deeply(printPath($c->p), <<END);
-........S
-........1
-......100
-......1..
-......1..
-......1..
-......001
-........1
-........F
-END
- }
-
-latest:;
-if (1)                                                                          #
- {my      $d = new(width=>4, height=>3, log=>1);
-  my $e = $d->wire(x=>0, y=>2, X=>1, Y=>1, n=>'e');
-
-  is_deeply(printPath($e->p), <<END);
-.....
-.....
-.....
-.....
-....F
-....1
-..001
-..1..
-S01..
-END
- }
-
-latest:;
-if (1)                                                                          #
- {my      $d = new(width=>4, height=>3, log=>1);
-  my $f = $d->wire(x=>0, y=>3, X=>4, Y=>0, n=>'f');
-
-  is_deeply(printPath($f->p), <<END);
-................F
-................1
-..............001
-..............1..
-..............1..
-..............1..
-..............1..
-..............1..
-..............1..
-..............1..
-..0000000000001..
-..1..............
-S01..............
-END
- }
-
-latest:;
-if (1)                                                                          #
- {my      $d = new(width=>4, height=>3, log=>1);
-  my $F = $d->wire(x=>1, y=>3, X=>3, Y=>0, n=>'F');
-
-  is_deeply(printPath($F->p), <<END);
-............F
-............1
-..........001
-..........1..
-..........1..
-..........1..
-..........1..
-..........1..
-..........1..
-..........1..
-......00001..
-......1......
-....S01......
-END
- }
-
-latest:;
-if (1)                                                                          #
- {my      $d = new(width=>4, height=>3, log=>1);
-  my $g = $d->wire(x=>0, y=>0, X=>3, Y=>0, n=>'g');
-
-  say STDERR printPath($g->p);
-  is_deeply(printPath($g->p), <<END);
-S01.......00F
-..1.......1..
-..000000001..
-END
  }
 
 &done_testing;
