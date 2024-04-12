@@ -133,7 +133,8 @@ sub wire($%)                                                                    
     my $ly = $diagram->levelY->{$l};                                            # Y cells available on this level
     fillInAroundVia($_, $x, $y, $l, 22) for $lx, $ly;                           # Add metal around via so it can connect to the crossbars
     fillInAroundVia($_, $X, $Y, $l, 22) for $lx, $ly;
-    my @p = $diagram->findShortestPath($lx, $ly, [$x*4, $y*4], [$X*4, $Y*4], %options);
+#   my @p = $diagram->findShortestPath($lx, $ly, [$x*4, $y*4], [$X*4, $Y*4], %options);
+    my @p = $diagram->findPath($lx, $ly, [$x*4, $y*4], [$X*4, $Y*4], %options);
     if (@p and !@P || @p < @P)                                                  # Shorter path on this level
      {@P = @p;
       $L = $l;
@@ -194,7 +195,12 @@ sub totalLength($)                                                              
   $l
  }
 
-sub findShortestPath($$$$$%)                                                    # Find the shortest path between two points in a two dimensional image stepping only from/to adjacent marked cells. The permissible steps are given in two imahes, one for x steps and one for y steps.
+my sub distance($$$$)                                                           # Manhattan distance between two points
+ {my ($x, $y, $X, $Y) = @_;                                                     # Start x, start y, end x, end y
+  abs($X - $x) + abs($Y - $y)
+ }
+
+sub testStartAndEnd($$$$$%)                                                     # Confirm that the start and end points are on valid cells
  {my ($diagram, $imageX, $imageY, $start, $finish, %options) = @_;              # Diagram, ImageX{x}{y}, ImageY{x}{y}, start point, finish point, options
   my %ix = %$imageX; my %iy = %$imageY;                                         # Shorten names
 
@@ -207,7 +213,65 @@ END
   $ix{$X}{$Y} or $iy{$X}{$Y} or confess <<"END" =~ s/\n(.)/ $1/gsr;             # Check finish point is accessible
 End point [$X, $Y] is not in a selected cell
 END
+ ($x, $y, $X, $Y)
+ }
 
+sub findPath($$$$$%)                                                            # Use direct path from each end of the line to reduce the search space for shortest path
+ {my ($diagram, $imageX, $imageY, $start, $finish, %options) = @_;              # Diagram, ImageX{x}{y}, ImageY{x}{y}, start point, finish point, options
+  my %ix = %$imageX; my %iy = %$imageY;                                         # Shorten names
+
+  my ($x, $y, $X, $Y) = &testStartAndEnd(@_);                                   # Start/Finish point
+
+  my sub step($$$$$$)                                                           # Step closer to destination
+   {my ($cx, $cy, $sx, $sy, $tx, $ty) = @_;                                     # Current position,  step, target
+    my $s = $cy == $sy ? 0 : 1;                                                 # Direction of step
+    return  [1, $sx, $sy, $s] if $sx == $tx and $sy == $ty;                     # Reached target
+    return  [0] unless $ix{$sx}{$sy} or $iy{$sx}{$sy};                          # Cannot move
+    my $D = distance($cx, $cy, $tx, $ty);                                       # Current position to target
+    my $d = distance($sx, $sy, $tx, $ty);                                       # Step to target
+    return  [2, $sx, $sy, $s] if $d < $D;                                       # Step is closer
+    [-1]                                                                        # Step is not closer
+   }
+
+  my @p = $start;                                                               # The path from the start
+  for(1..999999)
+   {my $s = step($x, $y, $x+1, $y,   $X, $Y);
+       $s = step($x, $y, $x-1, $y,   $X, $Y) unless $$s[0] > 0;
+       $s = step($x, $y, $x,   $y+1, $X, $Y) unless $$s[0] > 0;
+       $s = step($x, $y, $x,   $y-1, $X, $Y) unless $$s[0] > 0;
+    my $a = shift @$s;
+    if    ($a == 1) {$p[-1][2] = $$s[2]; push @p, $finish; return @p}           # Found the finish
+    elsif ($a == 2) {$p[-1][2] = $$s[2]; push @p, $s; ($x, $y) = @$s}
+    else            {last}
+   }
+
+  my @q = $finish;                                                              # The path from the finish
+  for(1..999999)
+   {my $s = step($X, $Y, $X+1, $Y,   $x, $y);
+       $s = step($X, $Y, $X-1, $Y,   $x, $y) unless $$s[0] > 0;
+       $s = step($X, $Y, $X,   $Y+1, $x, $y) unless $$s[0] > 0;
+       $s = step($X, $Y, $X,   $Y-1, $x, $y) unless $$s[0] > 0;
+    my $a = shift @$s;
+    if ($a == 2) {push @q, $s; ($X, $Y) = @$s}
+    else         {last}
+   }
+
+
+  my @r = &findShortestPath($diagram, $imageX, $imageY, [$x, $y], [$X, $Y], %options); # Find shortest path
+  return () unless @r;                                                          # No path available
+  my $l;
+  while(@p and @r and $p[-1][0] == $r[0][0] and $p[-1][1] == $r[0][1])
+   {pop @p; $l = shift @r;
+   }
+  (@p, $l, @r, reverse @q)                                                          # Shortest path between direct from start and direct from  finish
+ }
+
+sub findShortestPath($$$$$%)                                                    # Find the shortest path between two points in a two dimensional image stepping only from/to adjacent marked cells. The permissible steps are given in two imahes, one for x steps and one for y steps.
+ {my ($diagram, $imageX, $imageY, $start, $finish, %options) = @_;              # Diagram, ImageX{x}{y}, ImageY{x}{y}, start point, finish point, options
+  my %ix = %$imageX; my %iy = %$imageY;                                         # Shorten names
+
+  my ($x, $y, $X, $Y) = &testStartAndEnd(@_);                                   # Start/Finish point
+                                                                                # Shortest path search using Dijkistra
   my %o; $o   {$x}{$y} = 1;                                                     # Cells at current edge of search
   my %b; $b   {$x}{$y} = 1;                                                     # Shortest path to this cell from start via breadth first search
   my %d; $d{1}{$x}{$y} = 1;                                                     # Cells at depth from start
@@ -422,11 +486,6 @@ my sub darkSvgColor                                                             
   $r[$c] *= 2;
 
   sprintf "#%02X%02X%02X", @r;
- }
-
-my sub distance($$$$)                                                           # Manhattan distance between two points
- {my ($x, $y, $X, $Y) = @_;                                                     # Start x, start y, end x, end y
-  abs($X - $x) + abs($Y - $y)
  }
 
 my sub collapsePath($)                                                          # Collapse a path to reduce the number of svg commands and thus the size of the svg files
@@ -1661,9 +1720,9 @@ if (1)                                                                          
 .........
 ....S01..
 ......1..
-......1..
-......1..
-......00F
+......001
+........1
+........F
 END
   $d->gds2(svg=>q(xy1));
   $d->svg (svg=>q(xy1));
@@ -1683,8 +1742,8 @@ END
   is_deeply($d->printWire($a), "   1,   1      2,   1   1  a       4,4,0  5,4,0  6,4,0  7,4,0  8,4");
   is_deeply($d->printCode,, <<END);
 Silicon::Chip::Wiring::new(width=>2, height=>2);
-\$d->wire(x=> 1, y=> 1, X=> 2, Y=> 1);
-\$d->wire(x=> 1, y=> 2, X=> 2, Y=> 2);
+\$d->wire(x=>   1, y=>   1, X=>   2, Y=>   1);
+\$d->wire(x=>   1, y=>   2, X=>   2, Y=>   2);
 END
   is_deeply($d->printInOrder, <<END);
 Length: 10
@@ -1692,6 +1751,21 @@ Length: 10
    1,   1      2,   1   1  a       4,4,0  5,4,0  6,4,0  7,4,0  8,4
    1,   2      2,   2   1  b       4,8,0  5,8,0  6,8,0  7,8,0  8,8
 END
+ }
+
+#latest:;
+if (1)                                                                          #Tnew #Twire #TtotalLength
+ {my      $d = new(width=>4, height=>3, log=>1);
+  my $a = $d->wire(x=>0, y=>1, X=>2, Y=>1, n=>'a');
+
+  is_deeply(printPath($a->p), <<END);
+.........
+.........
+..00001..
+..1...1..
+S01....0F
+END
+  $d->svg (svg=>q(xy2), pngs=>2);
  }
 
 #latest:;
@@ -1809,6 +1883,8 @@ END
   $d->svg (svg=>q(xy2), pngs=>2);
   $d->gds2(svg=>q/xy2/);
  }
+exit;
+
 
 #    Original   Collapse
 #    012345678  012345678
@@ -1953,7 +2029,7 @@ if (1)                                                                          
  }
 
 
-latest:;
+#latest:;
 if (1)                                                                          #
  {my $d = Silicon::Chip::Wiring::new(width=>1528, height=>232, debug=>1);
   $d->wire(x=>179, y=>216, X=>1324, Y=>39);
@@ -1999,7 +2075,132 @@ if (1)                                                                          
   $d->wire(x=>179, y=>152, X=>1312, Y=>135);
   $d->wire(x=>179, y=>152, X=>1312, Y=>135);
   $d->svg(svg=>q(aaa), pngs=>2);
-  say STDERR "AAAA ", dump($d->levels);
+ }
+
+latest:;
+if (1)                                                                          #
+ {my      $d = new(width=>4, height=>3, log=>1);
+  my $a = $d->wire(x=>0, y=>1, X=>2, Y=>1, n=>'a');
+
+  is_deeply(printPath($a->p), <<END);
+.........
+.........
+..00001..
+..1...1..
+S01...00F
+END
+  $d->svg (svg=>q(xy2), pngs=>2);
+ }
+
+latest:;
+if (1)                                                                          #
+ {my      $d = new(width=>4, height=>3, log=>1);
+  my $b = $d->wire(x=>1, y=>0, X=>1, Y=>2, n=>'b');
+
+  is_deeply(printPath($b->p), <<END);
+....S
+....1
+..100
+..1..
+..1..
+..1..
+..001
+....1
+....F
+END
+ }
+
+latest:;
+if (1)                                                                          #
+ {my      $d = new(width=>4, height=>3, log=>1);
+  my $c = $d->wire(x=>2, y=>0, X=>2, Y=>2, n=>'c');
+
+  is_deeply(printPath($c->p), <<END);
+........S
+........1
+......100
+......1..
+......1..
+......1..
+......001
+........1
+........F
+END
+ }
+
+latest:;
+if (1)                                                                          #
+ {my      $d = new(width=>4, height=>3, log=>1);
+  my $e = $d->wire(x=>0, y=>2, X=>1, Y=>1, n=>'e');
+
+  is_deeply(printPath($e->p), <<END);
+.....
+.....
+.....
+.....
+....F
+....1
+..001
+..1..
+S01..
+END
+ }
+
+latest:;
+if (1)                                                                          #
+ {my      $d = new(width=>4, height=>3, log=>1);
+  my $f = $d->wire(x=>0, y=>3, X=>4, Y=>0, n=>'f');
+
+  is_deeply(printPath($f->p), <<END);
+................F
+................1
+..............001
+..............1..
+..............1..
+..............1..
+..............1..
+..............1..
+..............1..
+..............1..
+..0000000000001..
+..1..............
+S01..............
+END
+ }
+
+latest:;
+if (1)                                                                          #
+ {my      $d = new(width=>4, height=>3, log=>1);
+  my $F = $d->wire(x=>1, y=>3, X=>3, Y=>0, n=>'F');
+
+  is_deeply(printPath($F->p), <<END);
+............F
+............1
+..........001
+..........1..
+..........1..
+..........1..
+..........1..
+..........1..
+..........1..
+..........1..
+......00001..
+......1......
+....S01......
+END
+ }
+
+latest:;
+if (1)                                                                          #
+ {my      $d = new(width=>4, height=>3, log=>1);
+  my $g = $d->wire(x=>0, y=>0, X=>3, Y=>0, n=>'g');
+
+  say STDERR printPath($g->p);
+  is_deeply(printPath($g->p), <<END);
+S01.......00F
+..1.......1..
+..000000001..
+END
  }
 
 &done_testing;
