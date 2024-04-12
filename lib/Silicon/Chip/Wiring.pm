@@ -200,7 +200,7 @@ my sub distance($$$$)                                                           
   abs($X - $x) + abs($Y - $y)
  }
 
-sub testStartAndEnd($$$$$%)                                                     # Confirm that the start and end points are on valid cells
+sub testStartAndEnd($$$$$%)                                                     #P Confirm that the start and end points are on valid cells
  {my ($diagram, $imageX, $imageY, $start, $finish, %options) = @_;              # Diagram, ImageX{x}{y}, ImageY{x}{y}, start point, finish point, options
   my %ix = %$imageX; my %iy = %$imageY;                                         # Shorten names
 
@@ -216,7 +216,7 @@ END
  ($x, $y, $X, $Y)
  }
 
-sub findPath($$$$$%)                                                            # Use direct path from each end of the line to reduce the search space for shortest path
+sub findPath($$$$$%)                                                            #P Use direct path from each end of the line to reduce the search space for shortest path
  {my ($diagram, $imageX, $imageY, $start, $finish, %options) = @_;              # Diagram, ImageX{x}{y}, ImageY{x}{y}, start point, finish point, options
   my %ix = %$imageX; my %iy = %$imageY;                                         # Shorten names
 
