@@ -191,7 +191,7 @@ class Diagram                                                                   
           final char c = x && y ? '3' : y ? '2' : x ? '1' : ' ';
           s.append(c);
          }
-        s.append("\\n");
+        s.append(System.lineSeparator());
        }
       return s.toString();
      }
@@ -217,12 +217,12 @@ class Diagram                                                                   
 
     void printD()                                                               // Print state of current search
      {System.err.print("    ");
-      for  (int x = 0; x < width; ++x)
+      for  (int x = 0; x < width; ++x)                                          // Print column headers
        {System.err.print(String.format("%2d ", x));
        }
       System.err.println("");
 
-      for  (int y = 0; y < height; ++y)
+      for  (int y = 0; y < height; ++y)                                         // Print body
        {System.err.print(String.format("%3d ", y));
         for(int x = 0; x < width;  ++x)
          {System.err.print(String.format("%2d ", d[x][y]));
@@ -259,9 +259,9 @@ class Diagram                                                                   
       return false;                                                             // Unable to place wire
      }
 
-    boolean step(int x, int y, int D)                                              // Step back along path from finish to start
-     {if (x <  0     || y <  0)      return false;                                                                  // Preference for step in X
-      if (x >= width || y >= height) return false;                                                                  // Preference for step in X
+    boolean step(int x, int y, int D)                                           // Step back along path from finish to start
+     {if (x <  0     || y <  0)      return false;                              // Preference for step in X
+      if (x >= width || y >= height) return false;                              // Step is viable?
       return d[x][y] == D;
      }
 
@@ -282,7 +282,7 @@ class Diagram                                                                   
           else stop("Cannot retrace");
          }
         else
-         {if      (step(x, y-1, D)) {y--; S = 1;}                                // Preference for step in y
+         {if      (step(x, y-1, D)) {y--; S = 1;}                               // Preference for step in y
           else if (step(x, y+1, D)) {y++; S = 1;}
           else if (step(x-1, y, D)) {x--; S = 0;}
           else if (step(x+1, y, D)) {x++; S = 0;}
@@ -319,7 +319,8 @@ class Diagram                                                                   
     Search(Level Level, Pixel Start, Pixel Finish)                              // Search for path along which to place wire
      {level = Level; start = Start; finish = Finish;
       final int x = start.x, y = start.y, X = finish.x, Y = finish.y;
-      if (x < 0 || y < 0)
+
+      if (x < 0 || y < 0)                                                       // Validate start and finish
         stop("Start out side of diagram", x, y);
 
       if (x >= width || y >= height)
@@ -348,7 +349,7 @@ class Diagram                                                                   
          }
        }
 
-      findShortestPath();
+      findShortestPath();                                                       // Shortest path
 
       for  (int i = -2; i <= 2; ++i)                                            // Remove metal around via
        {for(int j = -2; j <= 2; ++j)
@@ -357,7 +358,7 @@ class Diagram                                                                   
          }
        }
 
-      if (found)                                                                // The found path will be from finosh to start so we reverse it and remove the pixels used from further consideration.
+      if (found)                                                                // The found path will be from finish to start so we reverse it and remove the pixels used from further consideration.
        {final Stack<Pixel> r = new Stack<>();
         Pixel p = path.pop(); r.push(p);                                        // Start point
 
@@ -392,7 +393,7 @@ class Diagram                                                                   
         S = new Search(l, start, finish);                                       // Search
        }
 
-      placed = S.found;
+      placed = S.found;                                                         // Save details of shortest path
       path   = S.path;
       turns  = S.turns != null ? S.turns : -1;
       wires.push(this);
@@ -405,7 +406,7 @@ class Diagram                                                                   
     final int Height = S.nextInt();
     final Diagram d  = new Diagram(Width, Height);
     final int wires  = S.nextInt();
-    for (int i = 0; i < wires; i++)
+    for (int i = 0; i < wires; i++)                                             // Process each wire
      {final int sx = S.nextInt(), sy = S.nextInt(),
                 fx = S.nextInt(), fy = S.nextInt();
       final Wire w = d.new Wire(sx, sy, fx, fy);
