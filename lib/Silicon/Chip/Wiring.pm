@@ -81,7 +81,7 @@ sub wire($$$$$%)                                                                
   $w                                                                            # The wire
  }
 
-sub Segment($%)                                                                 # New segment on wiring diagram
+sub segment($%)                                                                 #P New segment on wiring diagram
  {my ($diagram, %options) = @_;                                                 # Diagram, segment details from Diagram.java
   my $x = $options{x};
   my $y = $options{y};
@@ -160,7 +160,7 @@ sub layout($%)                                                                  
     $w->l = $$o[0];
     my @s = $$o[1]->@*;
     for my $s(@s)                                                               # Load segments
-     {my $t = $d->Segment(%$s);
+     {my $t = $d->segment(%$s);
       push $w->p->@*, $t;
      }
    }
