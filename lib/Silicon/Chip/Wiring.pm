@@ -1,5 +1,4 @@
 #!/usr/bin/perl -I/home/phil/perl/cpan/DataTableText/lib/ -I/home/phil/perl/cpan/SvgSimple/lib/  -I/home/phil/perl/cpan/Math-Intersection-Circle-Line/lib
-#!/usr/bin/perl -I/home/phil/perl/cpan/DataTableText/lib/ -I/home/phil/perl/cpan/SvgSimple/lib/  -I/home/phil/perl/cpan/Math-Intersection-Circle-Line/lib
 #-------------------------------------------------------------------------------
 # Wiring up a silicon chip to transform software into hardware.
 # Philip R Brenan at appaapps dot com, Appa Apps Ltd Inc., 2024
@@ -31,8 +30,9 @@ use GDS2;
 
 makeDieConfess;
 
-my $debug = 0;                                                                  # Debug if set
-sub debugMask {1}                                                               # Adds a grid to the drawing of a bus line
+sub pixelsPerCell  {4}                                                          # Pixels per cell
+sub crossbarOffset {2}                                                          # Offset of crossbars in each cell
+sub svgGrid        {1}                                                          # Adds a grid to each svg image
 
 #D1 Construct                                                                   # Create a Silicon chip wiring diagram on one or more levels as necessary to make the connections requested.
 
@@ -81,12 +81,53 @@ sub wire($$$$$%)                                                                
   $w                                                                            # The wire
  }
 
+sub Segment($%)                                                                 # New segment on wiring diagram
+ {my ($diagram, %options) = @_;                                                 # Diagram, segment details from Diagram.java
+  my $x = $options{x};
+  my $y = $options{y};
+  my $w = $options{width};
+  my $h = $options{height};
+  my $o = $options{onX};
+
+  defined($x) or confess "x";
+  defined($y) or confess "y";
+  defined($w) or defined($h) or confess "Width or height required";
+
+  genHash(__PACKAGE__."::Segment",                                              # Segment
+    x => $x,                                                                    # Start x position of segment
+    y => $y,                                                                    # Start y position of segment
+    X => $x+($w//1),                                                            # Finish x position of segment
+    Y => $y+($h//1),                                                            # Finish y position of segment
+    w => $w,                                                                    # Width of segment or undef if on Y cross bar
+    h => $h,                                                                    # Height of segment or undef if on X cross bar
+    o => $o,                                                                    # On X crossbar
+   );
+ }
+
+sub intersect($$$$%)                                                            #P Intersection between two adjacent segments
+ {my ($diagram, $wire, $s, $S, %options) = @_;                                  # Diagram, wire, first segment, second segment, options
+
+  ($s, $S) = ($S, $s) unless $s->w;                                             # First segment is horizontal, second one vertical
+  return ($s->x,     $s->y)   if $s->x == $S->x and $s->y == $S->y;
+  return ($s->X-1,   $s->y)   if $s->X == $S->X and $s->y == $S->y;
+  return ($s->X-1,   $s->Y-1) if $s->X == $S->X and $s->Y == $S->Y;
+  return ($s->x,     $s->Y-1) if $s->x == $S->x and $s->Y == $S->Y;
+  say STDERR "Wire    = ", dump($wire);
+  say STDERR "Segment1= ", dump($s);
+  say STDERR "Segment2= ", dump($S);
+  confess "No intersection";
+ }
+
 sub resetLevels($%)                                                             #P Reset all the levels so we can layout again
  {my ($diagram, %options) = @_;                                                 # Diagram, options
 
   $diagram->levels = 0;
   $diagram->levelX = {};
   $diagram->levelY = {};
+  my @w = $diagram->wires->@*;
+  for my $w(@w)
+   {$w->l = $w->p = undef;
+   }
  }
 
 sub layout($%)                                                                  # Layout the wires using Java
@@ -95,12 +136,14 @@ sub layout($%)                                                                  
      $d->resetLevels;                                                           # Reset for new layout
 
   my @w = $d->wires->@*;
+  return unless @w;                                                             # Nothing to layout
   my $i = temporaryFile;                                                        # Specification of wires to be made
   my $o = temporaryFile;                                                        # Details of connections made
   my $j = q(Diagram.java);                                                      # Code to produce wiring diagram
+  my $x = pixelsPerCell;                                                        # Pixels per cell
 
-  owf($i, join "\n", 4*$d->width, 4*$d->height, scalar(@w),                     # Divide each cell into 4 sub cells == pixels
-          map {4*$_}
+  owf($i, join "\n", $x*$d->width, $x*$d->height, scalar(@w),                   # Divide each cell into 4 sub cells == pixels
+          map {$x * $_}
           map {@$_{qw(x y X Y)}} @w);
 
   owf($j, $diagram->java);                                                      # Run code to produce wiring diagram
@@ -115,14 +158,12 @@ sub layout($%)                                                                  
    {my $w = $w[$i];
     my $o = $o[$i];
     $w->l = $$o[0];
-    $w->p = $$o[1];
-    my @p = $w->p->@*;
-    for my $j(1..$#p)                                                           # Direction indicator
-     {my ($p, $q) = ($p[$j-1], $p[$j]);
-      $$p[2] = $$p[0] == $$q[0] ? 1 : 0;
+    my @s = $$o[1]->@*;
+    for my $s(@s)                                                               # Load segments
+     {my $t = $d->Segment(%$s);
+      push $w->p->@*, $t;
      }
    }
-
   $d->levels = maximum map {$_->l} $d->wires->@*;                               # Number of levels
  }
 
@@ -133,7 +174,11 @@ sub numberOfWires($%)                                                           
 
 sub length($$)                                                                  # Length of a wire in a diagram
  {my ($D, $w) = @_;                                                             # Diagram, wire
-  scalar $w->p->@*                                                              # The length of the path
+  my $l = 0;
+  for my $s($w->p->@*)                                                          # Length of each segment
+   {$l += ($s->w // $s->h) - 1;                                                 # Account for overlap
+   }
+  ++$l;                                                                         # The first segment does not overlap
  }
 
 sub totalLength($)                                                              # Total length of wires
@@ -151,7 +196,10 @@ my sub distance($$$$)                                                           
 #D1 Shortest Path                                                               # Find the shortest path using compiled code
 
 sub java                                                                        #P Using Java as it is faster than Perl to layout the connections
- {<<END
+ {my $pixelsPerCell  = pixelsPerCell;
+  my $crossbarOffset = crossbarOffset;
+
+  <<END
 //------------------------------------------------------------------------------
 // Wiring diagram
 // Philip R Brenan at appaapps dot com, Appa Apps Ltd Inc., 2024
@@ -159,11 +207,14 @@ sub java                                                                        
 import java.util.*;
 
 class Diagram                                                                   // Wiring diagram
- {final static Scanner S = new Scanner(System.in);                              // Read the input file
-  final int width;                                                              // Width of diagram
-  final int height;                                                             // Height of diagram
+ {final static Scanner    S = new Scanner(System.in);                           // Read the input file
+  final int           width;                                                    // Width of diagram
+  final int          height;                                                    // Height of diagram
   final Stack<Level> levels = new Stack<>();                                    // Wires levels in the diagram
   final Stack<Wire>   wires = new Stack<>();                                    // Wires in the diagram
+  final int   pixelsPerCell = $pixelsPerCell;                                   // Number of pixels along one side of a cell
+  final int  crossBarOffset = $crossbarOffset;                                  // Offset of the pixels in each cross bar from the edge of the cell
+
   public Diagram(int Width, int Height)                                         // Diagram
    {width = Width; height = Height;
     new Level();                                                                // A diagram has at least one level
@@ -176,8 +227,8 @@ class Diagram                                                                   
     public Level()                                                              // Diagram
      {for   (int i = 0; i < width;  ++i)                                        // The initial moves allowed
        {for (int j = 0; j < height; ++j)
-         {if (j % 4 == 2) ix[i][j] = true;                                      // This arrangement leaves room for the vertical vias that connect the levels to the sea of gates on level 0
-          if (i % 4 == 2) iy[i][j] = true;
+         {if (j % pixelsPerCell == crossBarOffset) ix[i][j] = true;             // This arrangement leaves room for the vertical vias that connect the levels to the sea of gates on level 0
+          if (i % pixelsPerCell == crossBarOffset) iy[i][j] = true;
          }
        }
       levels.push(this);                                                        // Add level to diagram
@@ -188,7 +239,7 @@ class Diagram                                                                   
       for  (int j = 0; j < height; ++j)
        {for(int i = 0; i < width;  ++i)
          {final boolean x = ix[i][j], y = iy[i][j];
-          final char c = x && y ? '3' : y ? '2' : x ? '1' : ' ';
+          final char c = x && y ? '3' : y ? '2' : x ? '1' : ' ';                // Only used for debugging so these values have no long term meaning
           s.append(c);
          }
         s.append(System.lineSeparator());
@@ -201,6 +252,55 @@ class Diagram                                                                   
    {final int x, y;
     public Pixel(int X, int Y) {x = X; y = Y;}
     public String toString() {return "["+x+","+y+"]";}
+   }
+
+  class Segment                                                                 // Segment containing some pixels
+   {Pixel corner = null, last = null;                                           // Left most, upper most corner; last pixel placed
+    Integer width = null, height = null;                                        // Width and height of segment, the segment is always either 1 wide or 1 high.
+    Boolean onX = null;                                                         // The segment is on the x cross bar level if true else on the Y cross bar level
+
+    public Segment(Pixel p)                                                     // Start a new segment
+     {corner = p;
+     }
+
+    public boolean add(Pixel p)                                                 // Add the next pixel to the segment if possible
+     {if (corner == null)                  {corner = p;             last = p; return true;}
+      else if (width == null && height == null)
+       {if      (p.x == corner.x - 1)      {corner = p; width  = 2; last = p; return true;}
+        else if (p.x == corner.x + 1)      {            width  = 2; last = p; return true;}
+        else if (p.y == corner.y - 1)      {corner = p; height = 2; last = p; return true;}
+        else if (p.y == corner.y + 1)      {            height = 2; last = p; return true;}
+       }
+      else if (width != null)
+       {if      (p.x == corner.x - 1)      {corner = p; width++;    last = p; return true;}
+        else if (p.x == corner.x + width)  {            width++;    last = p; return true;}
+       }
+      else if (height != null)
+       {if      (p.y == corner.y - 1)      {corner = p; height++;   last = p; return true;}
+        else if (p.y == corner.y + height) {            height++;   last = p; return true;}
+       }
+      return false;                                                             // Cannot add this pixel to the this segment
+     }
+
+    void removeFromCrossBars(Level level)                                       // Remove pixel from crossbars
+     {final int w = width  != null ? width  : 1;
+      final int h = height != null ? height : 1;
+      final Pixel c = corner;
+      final boolean F = false;
+      for   (int x = 0; x <= w; ++x)
+       {for (int y = 0; y <= h; ++y)
+         {if (onX) level.ix[c.x+x][c.y] = F; else level.iy[c.x][c.y+y] = F;
+         }
+       }
+     }
+
+    public String toString()                                                    // String representation in Perl format
+     {final String level = onX == null ? ", onX=>null" : onX ? ", onX=>1" : ", onX=>0";
+      if (corner      == null)                   return "{}";
+      else if (width  == null && height == null) return "{x=>"+corner.x+", y=>"+corner.y+level+"}";
+      else if (width  != null)                   return "{x=>"+corner.x+", y=>"+corner.y+", width=>" +width +level+"}";
+      else                                       return "{x=>"+corner.x+", y=>"+corner.y+", height=>"+height+level+"}";
+     }
    }
 
   class Search                                                                  // Find a shortest path between two points in this level
@@ -292,18 +392,15 @@ class Diagram                                                                   
         if (s != null && S != null && s != S) ++c ;                             // Count changes of direction
         s = S;                                                                  // Continue in the indicated direction
        }
-      if (turns == null || c < turns) {path = p; turns = c; found = true;}      // Record path with fewest turns so far
+      if (turns == null || c < turns) {path = p; turns = c;}                    // Record path with fewest turns so far
      }
 
-    void findShortestPath()                                                     // Shortest path
+    boolean findShortestPath()                                                  // Shortest path
      {final int x = start.x, y  = start.y;
 
       o.push(start);                                                            // Start
       d[x][y] = 1;                                                              // Visited start
-
-      if (!search()) return;                                                    // Return empty list if there is no path from the start to the finish
-      path(false);
-      path(true);
+      return search();                                                          // True if search for shortest path was successful
      }
 
     void setIx(int x, int y, boolean v)                                         // Set a temporarily possible position
@@ -332,40 +429,40 @@ class Diagram                                                                   
       if (X >= width || Y >= height)
         stop("Finish out side of diagram", X, Y, width, height);
 
-      if (x % 4 > 0 || y % 4 > 0)
+      if (x % pixelsPerCell > 0 || y % pixelsPerCell > 0)
         stop("Start not on a via", x, y);
 
-      if (X % 4 > 0 || Y % 4 > 0)
+      if (X % pixelsPerCell > 0 || Y % pixelsPerCell > 0)
         stop("Finish not on a via", X, Y);
 
       for   (int i = 0; i < width;  ++i)                                        // Clear the searched space
         for (int j = 0; j < height; ++j)
           d[i][j] = 0;
 
-      for  (int i = -2; i <= 2; ++i)                                            // Add metal around via
-       {for(int j = -2; j <= 2; ++j)
+      for  (int i = -crossBarOffset; i <= crossBarOffset; ++i)                  // Add metal around via
+       {for(int j = -crossBarOffset; j <= crossBarOffset; ++j)
          {setIx(x+i, y, true); setIx(X+i, Y, true);
           setIy(x, y+j, true); setIy(X, Y+j, true);
          }
        }
 
-      findShortestPath();                                                       // Shortest path
+      found = findShortestPath();                                               // Shortest path
 
-      for  (int i = -2; i <= 2; ++i)                                            // Remove metal around via
-       {for(int j = -2; j <= 2; ++j)
+      for  (int i = -crossBarOffset; i <= crossBarOffset; ++i)                  // Remove metal around via
+       {for(int j = -crossBarOffset; j <= crossBarOffset; ++j)
          {setIx(x+i, y, false); setIx(X+i, Y, false);
           setIy(x, y+j, false); setIy(X, Y+j, false);
          }
        }
 
       if (found)                                                                // The found path will be from finish to start so we reverse it and remove the pixels used from further consideration.
-       {final Stack<Pixel> r = new Stack<>();
+       {path(false);  path(true);                                               // Find path with fewer turns by choosing to favour steps in y over x
+
+        final Stack<Pixel> r = new Stack<>();
         Pixel p = path.pop(); r.push(p);                                        // Start point
 
         for(int i = 0; i < 999999 && path.size() > 0; ++i)                      // Reverse along path
          {final Pixel q = path.pop();                                           // Current pixel
-          final boolean[][]ixy = p.x != q.x ? level.ix : level.iy;              // Crossbar we used to reach the current pixel
-          ixy[p.x][p.y] = false;                                                // Remove pixel from crossbar
           r.push(p = q);                                                        // Save pixel in path running from start to finish instead of from finish to start
          }
         path = r;
@@ -374,12 +471,13 @@ class Diagram                                                                   
    }
 
   class Wire                                                                    // A wired connection on the diagram
-   {final Pixel       start;                                                    // Start pixel
-    final Pixel      finish;                                                    // End pixel
-    final Stack<Pixel> path;                                                    // Path from start to finish
-    final int         level;                                                    // The 1 - based  index of the level in the diagram
-    final int         turns;                                                    // Number of turns along path
-    final boolean     placed;                                                   // Whether the wire was place on the diagram or not
+   {final Pixel             start;                                              // Start pixel
+    final Pixel            finish;                                              // End pixel
+    final Stack<Pixel>       path;                                              // Path from start to finish
+    final Stack<Segment> segments = new Stack<>();                              // Wires represented as a series of rectangles
+    final int               level;                                              // The 1 - based  index of the level in the diagram
+    final int               turns;                                              // Number of turns along path
+    final boolean          placed;                                              // Whether the wire was place on the diagram or not
 
     Wire(int x, int y, int X, int Y)                                            // Create a wire and place it
      {start = new Pixel(x, y); finish = new Pixel(X, Y);
@@ -398,6 +496,38 @@ class Diagram                                                                   
       turns  = S.turns != null ? S.turns : -1;
       wires.push(this);
       level  = 1 + levels.indexOf(S.level);                                     // Levels are based from 1
+
+      collapsePixelsIntoSegments();                                             // Place pixels into segments
+
+      for(Segment s : segments) s.onX = s.width != null;                        // Crossbar
+
+      if (segments.size() == 1)                                                 // Set levels - direct connection
+       {final Segment s = segments.firstElement();
+        s.onX = s.height == null;
+       }
+      else if (segments.size() > 1)                                             // Set levels - runs along crossbars
+       {final Segment b = segments.firstElement();
+        final Segment B = segments.elementAt(1);
+        b.onX = B.onX;
+
+        final Segment e = segments.lastElement();
+        final Segment E = segments.elementAt(segments.size()-2);
+        e.onX = E.onX;
+       }
+
+      for(Segment s : segments) s.removeFromCrossBars(S.level);                 // Remove segments from crossbars
+     }
+
+    void collapsePixelsIntoSegments()                                           // Collapse pixels into segments
+     {Segment s = new Segment(path.firstElement());
+      segments.add(s);
+      for(Pixel q : path)
+       {if (s.corner != q && !s.add(q))
+         {Segment t = new Segment(s.last);
+          segments.add(t);
+          if (t.add(q)) s = t; else stop("Cannot add next pixel to new segment:", q);
+         }
+       }
      }
    }
 
@@ -410,7 +540,7 @@ class Diagram                                                                   
      {final int sx = S.nextInt(), sy = S.nextInt(),
                 fx = S.nextInt(), fy = S.nextInt();
       final Wire w = d.new Wire(sx, sy, fx, fy);
-      out("["+w.level+", "+w.path+"]");
+      out("["+w.level+", "+w.segments+"]");
      }
    }
 
@@ -431,7 +561,15 @@ class Diagram                                                                   
    }
  }
 
+
 //TEST 1
+/*
+16 16
+0
+----
+*/
+
+//TEST 2
 /*
 16 16
 3
@@ -439,29 +577,39 @@ class Diagram                                                                   
 0 8  4  8
 0 0  4 12
 ----
-[1, [[0,4], [1,4], [2,4], [3,4], [4,4]]]
-[1, [[0,8], [1,8], [2,8], [3,8], [4,8]]]
-[1, [[0,0], [1,0], [2,0], [2,1], [2,2], [2,3], [2,4], [2,5], [2,6], [2,7], [2,8], [2,9], [2,10], [2,11], [2,12], [3,12], [4,12]]]
+[1, [{x=>0, y=>4, width=>5, onX=>1}]]
+[1, [{x=>0, y=>8, width=>5, onX=>1}]]
+[1, [{x=>0, y=>0, width=>3, onX=>0}, {x=>2, y=>0, height=>13, onX=>0}, {x=>2, y=>12, width=>3, onX=>0}]]
 */
 
-//TEST 2
+//TEST 3
 /*
 16 16
 2
 4  4   8  4
 0  4  12  4
 ----
-[1, [[4,4], [5,4], [6,4], [7,4], [8,4]]]
-[1, [[0,4], [0,3], [0,2], [1,2], [2,2], [3,2], [4,2], [5,2], [6,2], [7,2], [8,2], [9,2], [10,2], [11,2], [12,2], [12,3], [12,4]]]
+[1, [{x=>4, y=>4, width=>5, onX=>1}]]
+[1, [{x=>0, y=>2, height=>3, onX=>1}, {x=>0, y=>2, width=>13, onX=>1}, {x=>12, y=>2, height=>3, onX=>1}]]
 */
 
-//TEST 3
+//TEST 4
 /*
 16 16
 1
 0 0 4 0
 ----
-[1, [[0,0], [1,0], [2,0], [3,0], [4,0]]]
+[1, [{x=>0, y=>0, width=>5, onX=>1}]]
+*/
+
+
+//TEST 5
+/*
+16 16
+1
+0 0 12 0
+----
+[1, [{x=>0, y=>0, height=>3, onX=>1}, {x=>0, y=>2, width=>13, onX=>1}, {x=>12, y=>0, height=>3, onX=>1}]]
 */
 END
  }
@@ -469,7 +617,7 @@ END
 #D1 Visualize                                                                   # Visualize a Silicon chip wiring diagrams
 
 my sub wireHeader()                                                             #P Wire header
- {"   x,   y      X,   Y   L  Name    Path";
+ {"   x,   y      X,   Y   L  Name     Path";
  }
 
 sub printCode($%)                                                               # Print code to create a diagram
@@ -514,27 +662,47 @@ sub printInOrder($%)                                                            
 
 sub printWire($$)                                                               # Print a wire to a string
  {my ($D, $W) = @_;                                                             # Drawing, wire
-  my ($x, $y, $X, $Y, $l, $n, $p) = @$W{qw(x y X Y l n p)};
-  sprintf "%4d,%4d   %4d,%4d  %2d  %-8s".(join '  ', map{join ',', @$_} @$p), $x, $y, $X, $Y, $l, $n
+  my ($x, $y, $X, $Y, $l, $n, $P) = @$W{qw(x y X Y l n p)};
+  my @p = sprintf "%4d,%4d   %4d,%4d  %2d  %-8s", $x, $y, $X, $Y, $l, $n;
+  $x *= 4; $y *= 4;
+  push @p, "$x,$y";
+  for my $p(@$P)
+   {my ($x1, $y1, $x2, $y2) = @$p{qw(x y X Y)};
+    if ($x1 == $x and $y1 == $y)
+     {$x = $x2 - 1; $y = $y2 - 1;
+     }
+    else
+     {$x = $x1; $y = $y1;
+     }
+    push @p, "$x,$y";
+   }
+  join ' ', @p;
  }
 
-sub printPath($)                                                                # Print a path as a two dimensional character image
- {my ($P) = @_;                                                                 # Path
+sub printPath($$)                                                               # Print the path of a wire on the diagram as a two dimensional character image
+ {my ($diagram, $wire) = @_;                                                    # Diagram, path
+  my @p = $wire->p->@*;                                                         # Path
 
-  my $X; my $Y;
-  for my $p(@$P)                                                                # Find dimensions of path
-   {my ($x, $y, $s) = @$p;
-    $X = maximum($X, $x); $Y = maximum($Y, $y);
+  my $W; my $H;
+  for my $p(@p)                                                                 # Find dimensions of path
+   {my ($x, $y, $w, $h) = @$p{qw(x y w h)};
+    $W = maximum($W, $x+($w//1)); $H = maximum($H, $y+($h//1));
    }
 
-  my @s = ('.' x (1+$X)) x (1+$Y);                                              # Empty image
+  my @s = ('.' x $W) x $H;                                                      # Empty image
 
-  for my $p(@$P)                                                                # Along the path
-   {my ($x, $y, $s) = @$p;
-    substr($s[$y], $x, 1) = $s//'.';
+  for my $p(@p)                                                                 # Along the path
+   {my ($x, $y, $w, $h) = @$p{qw(x y w h)};
+    if (defined $w)
+     {substr($s[$y], $_, 1) = '0' for $x..$x+$w-1;
+     }
+    else
+     {substr($s[$_], $x, 1) = '1' for $y..$y+$h-1;
+     }
    }
-  substr($s[$$P[ 0][1]], $$P[ 0][0], 1) = 'S';                                  # Finish
-  substr($s[$$P[-1][1]], $$P[-1][0], 1) = 'F';                                  # Finish
+  my ($x, $y, $X, $Y) = @$wire{qw(x y X Y )};                                   # Start and finish
+  substr($s[$y*4], $x*4, 1) = 'S';                                              # Start
+  substr($s[$Y*4], $X*4, 1) = 'F';                                              # Finish
   join "\n", @s, '';
  }
 
@@ -602,9 +770,8 @@ sub svg($%)                                                                     
   if (defined(my $l = $options{level}))                                         # Draw the specified level
    {$D->svgLevel($l, %options);
    }
-  else                                                                          # Draw all levels
-   {my $L = $D->levels;
-    my @s;
+  elsif (defined(my $L = $D->levels))                                           # Draw all levels
+   {my @s;
     for my $l(1..$L)
      {push @s, $D->svgLevel($l, %options);                                      # Write each level into a separate file
      }
@@ -612,43 +779,18 @@ sub svg($%)                                                                     
    }
  }
 
+my $changeColor = 0;                                                            # Alternate between the colors
+
 my sub darkSvgColor                                                             # Generate a random dark color in hexadecimal format
- {my $c = int rand 3;
-  my @r = map {int rand 128} 1..3;
-  $r[$c] *= 2;
+ {my @r = map {int(rand 128)} 1..3;
+  $r[$changeColor++ % @r] += 128;                                                                # Make one component lighter
 
   sprintf "#%02X%02X%02X", @r;
  }
 
-my sub collapsePath($)                                                          # Collapse a path to reduce the number of svg commands and thus the size of the svg files
- {my ($p) = @_;                                                                 # Path to collapse
-           # Start   # Finish  # Direction
-  my @c = [$$p[0],   $$p[0],   0];                                              # Collapse the path to reduce the number of svg commands.
-  for my $i(1..$#$p)                                                            # Index path
-   {my @q = $$p[$i]->@*;                                                        # Current element of path
-    my @o = $c[-1][0]->@*;                                                      # Start of previous extension
-    if ($o[0] != $q[0] and $o[1] != $q[1])                                      # New direction
-     {push @c, [[@q], [@q]];
-     }
-    else
-     {$c[-1][1] = [@q];
-     }
-   }
-
-  if (@c == 1) {$c[0][2] = $c[0][0][2]}                                         # Straight line so direction is the same as the step away from the via
-  else                                                                          # At least three segments
-   {for my $i(1..@c-2)                                                          # Index path
-     {$c[$i][2] = $c[$i][0][0] != $c[$i][1][0]? 0 : 1;                          # Direction of change
-     }
-    $c[ 0][2] = $c[1][2];                                                       # Step from first via is the same as first cross bar
-    $c[-1][2] = $c[-2][2];                                                      # Step to last    via is the same as last  cross bar
-   }
-
-  @c                                                                            # Collapsed path [[start x, start y], [finish x, finish y], level]
- }
-
 sub svgLevel($$%)                                                               #P Draw the bus lines by level.
  {my ($D, $level, %options) = @_;                                               # Wiring diagram, level, options
+  my $Nl = 4;                                                                   # Wiring layers within each level
 
   my @defaults = (defaults=>                                                    # Default values
    {stroke_width => 0.5,
@@ -657,35 +799,34 @@ sub svgLevel($$%)                                                               
     fill         => "transparent",
    });
 
-  my $svg = Svg::Simple::new(@defaults, %options, grid=>debugMask ? 1 : 0);     # Draw each wire via Svg. Grid set to 1 produces a grid that can be helpful debugging layout problems
+  my $svg = Svg::Simple::new(@defaults, %options, grid=>svgGrid);               # Draw each wire via Svg. Grid set to 1 produces a grid that can be helpful debugging layout problems
 
   for my $w($D->wires->@*)                                                      # Each wire in X
    {my ($l, $p) = @$w{qw(l p)};                                                 # Level and path
     next unless defined($l) and $l == $level;                                   # Draw the specified level
-    my @c = collapsePath($p);                                                   # Collapse the path to reduce the number of svg commands
-    my $C = darkSvgColor;                                                       # Dark color
-    for my $i(keys @c)                                                          # Index collapsed path
-     {my $q = $c[$i];                                                           # Element of path
-      my ($c, $d) = @$q;                                                        # Coordinates, dimensions
-      my ($x, $y) = @$c;                                                        # Coordinates at start
-      my ($X, $Y) = @$d;                                                        # Coordinates at end
-      $x < $X ? $X++ : ++$x;
-      $y < $Y ? $Y++ : ++$y;
-      $x /= 4; $y /= 4; $X /= 4; $Y /= 4;                                       # Scale
-      $svg->path(d=>"M $x $y L $X $y L $X $Y L $x $Y Z", fill=>$C);             # Rectangle as a path matching the gds2 implementation
-      if ($i > 0 and $c[$i][2] != $c[$i-1][2])                                  # Change of level due to change of direction
-       {my ($x, $y) = $c[$i-1][1]->@*;                                          # Coordinates of end of previous section
-        my ($cx, $cy) = (($x+1/3)/4, ($y+1/3)/4);                               # Start of last sub cell of previous segment
-        my ($dx, $dy) = (($x+2/3)/4, ($y+2/3)/4);                               # Far edge of last sub cell of previous segment
-        $svg->path(d=>"M $cx $cy L $dx $cy L $dx $dy L $cx $dy Z", stroke=>"black", stroke_width=>1/48); # Show change of level
+    my @s  = @$p;                                                               # Segments along path
+    my $dc = darkSvgColor;                                                      # Dark color
+    my $S;                                                                      # Previous segment
+
+    for my $i(keys @s)                                                          # Index segments
+     {my $s = $s[$i];                                                           # Segment along path
+      my ($x, $y, $X, $Y) = map {$_ / pixelsPerCell} @$s{qw(x y X Y)};          # Start x, y, end X, Y
+
+      my $L = $l * $Nl + ($s[2] ? 2 : 0);                                       # Sub level in wiring level
+      my $I = $l * $Nl + 1;                                                     # The insulation layer between the x and y crossbars.  We connect the x cross bars to the y cross bars through this later everytime we change direction in a wiring level.
+
+      $svg->path(d=>"M $x $y L $X $y L $X $Y L $x $Y Z", fill=>$dc);            # Draw segment
+
+      if (defined($S) and $s->o != $S->o)                                       # Change of level
+       {my ($x, $y) = map {$_/pixelsPerCell} $D->intersect($w, $s, $S);
+        my  $x1 = $x + 1/12; my $x2 = $x + 1/6;
+        my  $y1 = $y + 1/12; my $y2 = $y + 1/6;
+        $svg->path(d=>"M $x1 $y1 L $x2 $y1 L $x2 $y2 L $x1 $y2 Z", stroke=>"black", stroke_width=>1/48); # Show change of level
        }
+      $S = $s;
      }
-     my sub cd($$)                                                              # Coordinates of a start or end point
-      {my ($i, $j) = @_;                                                        # Index for point, coordinate in point
-       $$p[$i][$j] / 4
-      }
-     $svg->rect(x=>cd( 0, 0), y=>cd( 0, 1), width=>1/4, height=>1/4, fill=>"darkGreen");  # Draw start of wire
-     $svg->rect(x=>cd(-1, 0), y=>cd(-1, 1), width=>1/4, height=>1/4, fill=>"darkRed");    # Draw end   of wire
+    $svg->rect(x=>$w->x, y=>$w->y, width=>1/4, height=>1/4, fill=>"darkGreen"); # Draw start of wire
+    $svg->rect(x=>$w->X, y=>$w->Y, width=>1/4, height=>1/4, fill=>"darkRed");   # Draw end   of wire
    }
 
   my $t = $svg->print(width=>$D->width+1, height=>$D->height+1);                # Text of svg
@@ -703,7 +844,6 @@ sub gds2($%)                                                                    
  {my ($diagram, %options) = @_;                                                 # Wiring diagram, output file, options
   my $gdsBlock  = $options{block};                                              # Existing GDS2 block
   my $gdsOut    = $options{svg};                                                # Write a newly created gds2 block to this file in the gds sub folder
-  my $delta     = 1/4;                                                          # Offset from edge of each gate cell
   my $wireWidth = 1/4;                                                          # Width of a wire
 
   my $g = sub                                                                   # Draw as Graphics Design System 2 either inside an existing gds file or create a new one
@@ -721,58 +861,58 @@ sub gds2($%)                                                                    
   my @w  = $diagram->wires->@*;                                                 # Wires
   my $Nl = 4;                                                                   # Wiring layers within each level
 
-  my $levels = $diagram->levels;                                                # Levels
   my $width  = $diagram->width;                                                 # Width
   my $height = $diagram->height;                                                # Height
 
-  for my $wl(1..$levels)                                                        # Vias
-   {for my $l(0..$Nl-1)                                                         # Insulation, x layer, insulation, y layer
-     {for   my $x(0..$width)                                                    # Gate io pins run vertically along the "vias"
-       {for my $y(0..$height)
-         {my $x1 = $x; my $y1 = $y;
-          my $x2 = $x1 + $wireWidth; my $y2 = $y1 + $wireWidth;
-          $g->printBoundary(-layer=>$wl*$Nl+$l, -xy=>[$x1,$y1, $x2,$y1, $x2,$y2, $x1,$y2]); # Via
+  if (defined(my $levels = $diagram->levels))                                   # Levels
+   {for my $wl(1..$levels)                                                      # Vias
+     {for my $l(0..$Nl-1)                                                       # Insulation, x layer, insulation, y layer
+       {for   my $x(0..$width)                                                  # Gate io pins run vertically along the "vias"
+         {for my $y(0..$height)
+           {my $x1 = $x; my $y1 = $y;
+            my $x2 = $x1 + $wireWidth; my $y2 = $y1 + $wireWidth;
+            $g->printBoundary(-layer=>$wl*$Nl+$l, -xy=>[$x1,$y1, $x2,$y1, $x2,$y2, $x1,$y2]); # Via
+           }
          }
        }
      }
-   }
 
-  for my $x(0..$width)                                                          # Number cells
-   {$g->printText(-xy=>[$x, -1/8], -string=>"$x", -font=>3);                    # X coordinate
-   }
+    for my $x(0..$width)                                                        # Number cells
+     {$g->printText(-xy=>[$x, -1/8], -string=>"$x", -font=>3);                  # X coordinate
+     }
 
-  for my $y(1..$height)                                                         # Number cells
-   {$g->printText(-xy=>[0, $y+$wireWidth*1.2], -string=>"$y", -font=>3);        # Y coordinate
-   }
+    for my $y(1..$height)                                                       # Number cells
+     {$g->printText(-xy=>[0, $y+$wireWidth*1.2], -string=>"$y", -font=>3);      # Y coordinate
+     }
 
-  my sub via($$$)                                                               # Draw a vertical connector. The vertical connectors are known as vias and transmit the gate inputs and outputs to the various wiring layers.
-   {my ($x, $y, $l) = @_;                                                       # Options
-    $g->printBoundary(-layer=>$l*$Nl+2, -xy=>[$x-$s,$y-$s, $x+$s,$y-$s, $x+$s,$y+$s, $x-$s,$y+$s]); # Vertical connector
-   }
+    my sub via($$$)                                                             # Draw a vertical connector. The vertical connectors are known as vias and transmit the gate inputs and outputs to the various wiring layers.
+     {my ($x, $y, $l) = @_;                                                     # Options
+      $g->printBoundary(-layer=>$l*$Nl+2, -xy=>[$x-$s,$y-$s, $x+$s,$y-$s, $x+$s,$y+$s, $x-$s,$y+$s]); # Vertical connector
+     }
 
-  #say STDERR wireHeader;
-  for my $j(keys @w)                                                            # Layout each wire
-   {my $w = $w[$j];
-    my ($l, $p) = @$w{qw(l p)};
-    my @c = collapsePath($p);                                                   # Collapse the path
+    #say STDERR wireHeader;
+    for my $j(keys @w)                                                          # Layout each wire
+     {my $w = $w[$j];                                                           # Wire
+      my $l = $w->l;                                                            # Level wire is on
+      my @s = $w->p->@*;                                                        # Segments making up the path
+      my $S = undef;                                                            # Previous segment
+      for my $i(keys @s)                                                        # Index segments
+       {my $s = $s[$i];                                                         # Segment along path
+        my ($x, $y, $X, $Y) = @$s{qw(x y X Y)};                                 # Start x, y, end X, Y
+        $x /= 4; $y /= 4; $X /= 4; $Y /= 4;                                     # Scale
 
-    for my $i(keys @c)                                                          # Index collapsed path
-     {my $q = $c[$i];                                                           # Element of path
-      my ($c, $d) = @$q;                                                        # Coordinates, dimensions
-      my ($x, $y) = @$c;                                                        # Coordinates at start
-      my ($X, $Y) = @$d;                                                        # Coordinates at end
-      $x < $X ? $X++ : ++$x;
-      $y < $Y ? $Y++ : ++$y;
-      $x /= 4; $y /= 4; $X /= 4; $Y /= 4;                                       # Scale
+        my $L = $l * $Nl + ($s->o ? 0 : 2);                                     # Sub level in wiring level
+        my $I = $l * $Nl + 1;                                                   # The insulation layer between the x and y crossbars.  We connect the x cross bars to the y cross bars through this later everytime we change direction in a wiring level.
 
-      my $L = $l * $Nl + ($$q[2] ? 2 : 0);                                      # Sub level in wiring level
-      my $I = $l * $Nl + 1;                                                     # The insulation layer between the x and y crossbars.  We connect the x cross bars to the y cross bars through this later everytime we change direction in a wiring level.
+        $g->printBoundary(-layer=>$L, -xy=>[$x,$y, $X,$y, $X,$Y, $x,$Y]);       # Fill in cell
 
-      $g->printBoundary(-layer=>$L, -xy=>[$x,$y, $X,$y, $X,$Y, $x,$Y]);         # Fill in cell
-      if ($i > 0 and $c[$i][2] != $c[$i-1][2])                                  # Change of level
-       {$g->printBoundary(-layer=>$I, -xy=>[$X,$Y, $X-1/4,$Y, $X-1/4,$Y-1/4, $X,$Y-1/4]); # Step though insulation layer to connect the X crossbar to the Y crossbar.
+        if (defined($S) and $s->o != $S->o)                                     # Change of level
+         {my ($x, $y) = map {$_/4} $diagram->intersect($w, $s, $S);
+          $g->printBoundary(-layer=>$I, -xy=>[$x,$y, $x+1/4,$y, $x+1/4,$y+1/4, $x,$y+1/4]); # Step though insulation layer to connect the X crossbar to the Y crossbar.
+         }
+#        $g->printText(-xy=>[$x+1/8, $y+1/8], -string=>($j+1).".$i");            # Y coordinate
+        $S = $s;
        }
-      $g->printText(-xy=>[$x+1/8, $y+1/8], -string=>($j+1).".$i");              # Y coordinate
      }
    }
 
@@ -1916,7 +2056,7 @@ if (1)                                                                          
   my $w = $d->wire(1, 1, 2, 1, n=>'a');
           $d->layout;
   is_deeply($d->numberOfWires, 1);
-  is_deeply(printPath($w->p), <<END);
+  is_deeply($d->printPath($w), <<END);
 .........
 .........
 .........
@@ -1932,7 +2072,7 @@ if (1)                                                                          
   my $w = $d->wire(1, 1, 1, 2, n=>'b');
           $d->layout;
   is_deeply($d->length($w), 5);
-  is_deeply(printPath($w->p), <<END);
+  is_deeply($d->printPath($w), <<END);
 .....
 .....
 .....
@@ -1952,7 +2092,7 @@ if (1)                                                                          
  {my      $d = new(width=>3, height=>3);
   my $a = $d->wire(1, 1, 2, 2, n=>'a');
           $d->layout;
-  is_deeply(printPath($a->p), <<END);
+  is_deeply($d->printPath($a), <<END);
 .........
 .........
 .........
@@ -1973,13 +2113,13 @@ if (1)                                                                          
   my $a = $d->wire(1, 1, 2, 1, n=>'a');
   my $b = $d->wire(1, 2, 2, 2, n=>'b');
           $d->layout;
+  is_deeply($d->printWire($a), '   1,   1      2,   1   1  a        4,4 8,4');
   is_deeply($d->print, <<END);
 Length: 10
-   x,   y      X,   Y   L  Name    Path
-   1,   1      2,   1   1  a       4,4,0  5,4,0  6,4,0  7,4,0  8,4
-   1,   2      2,   2   1  b       4,8,0  5,8,0  6,8,0  7,8,0  8,8
+   x,   y      X,   Y   L  Name     Path
+   1,   1      2,   1   1  a        4,4 8,4
+   1,   2      2,   2   1  b        4,8 8,8
 END
-  is_deeply($d->printWire($a), "   1,   1      2,   1   1  a       4,4,0  5,4,0  6,4,0  7,4,0  8,4");
   is_deeply($d->printCode, <<END);
 Silicon::Chip::Wiring::new(width=>3, height=>3);
 \$d->wire(   1,    1,    2,    1);
@@ -1987,9 +2127,9 @@ Silicon::Chip::Wiring::new(width=>3, height=>3);
 END
   is_deeply($d->printInOrder, <<END);
 Length: 10
-   x,   y      X,   Y   L  Name    Path
-   1,   1      2,   1   1  a       4,4,0  5,4,0  6,4,0  7,4,0  8,4
-   1,   2      2,   2   1  b       4,8,0  5,8,0  6,8,0  7,8,0  8,8
+   x,   y      X,   Y   L  Name     Path
+   1,   1      2,   1   1  a        4,4 8,4
+   1,   2      2,   2   1  b        4,8 8,8
 END
  }
 
@@ -1999,7 +2139,13 @@ if (1)                                                                          
   my $a = $d->wire(0, 1, 2, 1, n=>'a');
           $d->layout;
 
-  is_deeply(printPath($a->p), <<END);
+  is_deeply($d->print, <<END);
+Length: 13
+   x,   y      X,   Y   L  Name     Path
+   0,   1      2,   1   1  a        0,4 0,2 8,2 8,4
+END
+
+  is_deeply($d->printPath($a), <<END);
 .........
 .........
 000000001
@@ -2014,7 +2160,13 @@ if (1)                                                                          
   my $b = $d->wire(1, 0, 1, 2, n=>'b');
           $d->layout;
 
-  is_deeply(printPath($b->p), <<END);
+  is_deeply($d->print, <<END);
+Length: 13
+   x,   y      X,   Y   L  Name     Path
+   1,   0      1,   2   1  b        4,0 2,0 2,8 4,8
+END
+
+  is_deeply($d->printPath($b), <<END);
 ..10S
 ..1..
 ..1..
@@ -2033,7 +2185,13 @@ if (1)                                                                          
   my $c = $d->wire(2, 0, 2, 2, n=>'c');
           $d->layout;
 
-  is_deeply(printPath($c->p), <<END);
+  is_deeply($d->print, <<END);
+Length: 13
+   x,   y      X,   Y   L  Name     Path
+   2,   0      2,   2   1  c        8,0 6,0 6,8 8,8
+END
+
+  is_deeply($d->printPath($c), <<END);
 ......10S
 ......1..
 ......1..
@@ -2052,7 +2210,13 @@ if (1)                                                                          
   my $e = $d->wire(0, 2, 1, 1, n=>'e');
           $d->layout;
 
-  is_deeply(printPath($e->p), <<END);
+  is_deeply($d->print, <<END);
+Length: 9
+   x,   y      X,   Y   L  Name     Path
+   0,   2      1,   1   1  e        0,8 2,8 2,4 4,4
+END
+
+  is_deeply($d->printPath($e), <<END);
 .....
 .....
 .....
@@ -2071,7 +2235,13 @@ if (1)                                                                          
   my $f = $d->wire(0, 3, 4, 0, n=>'f');
           $d->layout;
 
-  is_deeply(printPath($f->p), <<END);
+  is_deeply($d->print, <<END);
+Length: 29
+   x,   y      X,   Y   L  Name     Path
+   0,   3      4,   0   1  f        0,12 0,10 14,10 14,0 16,0
+END
+
+  is_deeply($d->printPath($f), <<END);
 ..............00F
 ..............1..
 ..............1..
@@ -2093,8 +2263,13 @@ if (1)                                                                          
  {my      $d = new(width=>5, height=>4, log=>1);
   my $F = $d->wire(1, 3, 3, 0, n=>'F');
           $d->layout;
+  is_deeply($d->print, <<END);
+Length: 21
+   x,   y      X,   Y   L  Name     Path
+   1,   3      3,   0   1  F        4,12 4,10 10,10 10,0 12,0
+END
 
-  is_deeply(printPath($F->p), <<END);
+  is_deeply($d->printPath($F), <<END);
 ..........00F
 ..........1..
 ..........1..
@@ -2117,7 +2292,13 @@ if (1)                                                                          
   my $g = $d->wire(0, 0, 3, 0, n=>'g');
           $d->layout;
 
-  is_deeply(printPath($g->p), <<END);
+  is_deeply($d->print, <<END);
+Length: 17
+   x,   y      X,   Y   L  Name     Path
+   0,   0      3,   0   1  g        0,0 0,2 12,2 12,0
+END
+
+  is_deeply($d->printPath($g), <<END);
 S...........F
 1...........1
 0000000000001
@@ -2142,23 +2323,21 @@ if (1)                                                                          
             $d->layout;
   is_deeply($d->levels, 2);
   is_deeply($d->totalLength, 119);
-  is_deeply($d->levels, 2);
 
-  my $expected = <<END;
+  #say STDERR $d->printInOrder; exit;
+  is_deeply($d->printInOrder, <<END);
 Length: 119
-   x,   y      X,   Y   L  Name    Path
-   0,   0      3,   0   2  g       0,0,1  0,1,1  0,2,0  1,2,0  2,2,0  3,2,0  4,2,0  5,2,0  6,2,0  7,2,0  8,2,0  9,2,0  10,2,0  11,2,0  12,2,1  12,1,1  12,0
-   0,   1      2,   1   1  a       0,4,1  0,3,1  0,2,0  1,2,0  2,2,0  3,2,0  4,2,0  5,2,0  6,2,0  7,2,0  8,2,1  8,3,1  8,4
-   0,   2      1,   1   1  e       0,8,1  0,7,1  0,6,0  1,6,0  2,6,0  3,6,0  4,6,1  4,5,1  4,4
-   0,   3      4,   0   1  f       0,12,1  0,11,1  0,10,0  1,10,0  2,10,0  3,10,0  4,10,0  5,10,0  6,10,0  7,10,0  8,10,0  9,10,0  10,10,0  11,10,0  12,10,0  13,10,0  14,10,1  14,9,1  14,8,1  14,7,1  14,6,1  14,5,1  14,4,1  14,3,1  14,2,1  14,1,1  14,0,0  15,0,0  16,0
-   1,   0      1,   2   1  b       4,0,0  3,0,0  2,0,1  2,1,1  2,2,1  2,3,1  2,4,1  2,5,1  2,6,1  2,7,1  2,8,0  3,8,0  4,8
-   1,   3      3,   0   1  F       4,12,1  4,13,1  4,14,0  5,14,0  6,14,0  7,14,0  8,14,0  9,14,0  10,14,1  10,13,1  10,12,1  10,11,1  10,10,1  10,9,1  10,8,1  10,7,1  10,6,1  10,5,1  10,4,1  10,3,1  10,2,1  10,1,1  10,0,0  11,0,0  12,0
-   2,   0      2,   2   1  c       8,0,0  7,0,0  6,0,1  6,1,1  6,2,1  6,3,1  6,4,1  6,5,1  6,6,1  6,7,1  6,8,0  7,8,0  8,8
+   x,   y      X,   Y   L  Name     Path
+   0,   0      3,   0   2  g        0,0 0,2 12,2 12,0
+   0,   1      2,   1   1  a        0,4 0,2 8,2 8,4
+   0,   2      1,   1   1  e        0,8 0,6 4,6 4,4
+   0,   3      4,   0   1  f        0,12 0,10 14,10 14,0 16,0
+   1,   0      1,   2   1  b        4,0 2,0 2,8 4,8
+   1,   3      3,   0   1  F        4,12 4,14 10,14 10,0 12,0
+   2,   0      2,   2   1  c        8,0 6,0 6,8 8,8
 END
 
-  $d->layout;     is_deeply($d->printInOrder, $expected);
-
-  is_deeply(printPath($a->p), <<END);
+  is_deeply($d->printPath($a), <<END);
 .........
 .........
 000000001
@@ -2166,7 +2345,7 @@ END
 S.......F
 END
 
-  is_deeply(printPath($b->p), <<END);
+  is_deeply($d->printPath($b), <<END);
 ..10S
 ..1..
 ..1..
@@ -2178,7 +2357,7 @@ END
 ..00F
 END
 
-  is_deeply(printPath($c->p), <<END);
+  is_deeply($d->printPath($c), <<END);
 ......10S
 ......1..
 ......1..
@@ -2190,7 +2369,7 @@ END
 ......00F
 END
 
-  is_deeply(printPath($e->p), <<END);
+  is_deeply($d->printPath($e), <<END);
 .....
 .....
 .....
@@ -2202,7 +2381,7 @@ END
 S....
 END
 
-  is_deeply(printPath($f->p), <<END);
+  is_deeply($d->printPath($f), <<END);
 ..............00F
 ..............1..
 ..............1..
@@ -2218,7 +2397,7 @@ END
 S................
 END
 
-  is_deeply(printPath($F->p), <<END);
+  is_deeply($d->printPath($F), <<END);
 ..........00F
 ..........1..
 ..........1..
@@ -2237,84 +2416,13 @@ END
 END
 
 
-  is_deeply(printPath($g->p), <<END);
+  is_deeply($d->printPath($g), <<END);
 S...........F
 1...........1
 0000000000001
 END
-  $d->layout;
   $d->svg (svg=>q(xy2), pngs=>2);
   $d->gds2(svg=>q/xy2/);
- }
-
-#    Original   Collapse
-#    012345678  012345678
-#  0
-#  1
-#  2 000000001  0.......1
-#  3 1       1  .       .
-#  4 1       1  0       1
-
-#latest:;
-if (1)                                                                          #TcollapsePath
- {my @p = collapsePath([
-  [0, 4, 1],
-  [0, 3, 1],
-  [0, 2, 0],
-  [1, 2, 0],
-  [2, 2, 0],
-  [3, 2, 0],
-  [4, 2, 0],
-  [5, 2, 0],
-  [6, 2, 0],
-  [7, 2, 0],
-  [8, 2, 1],
-  [8, 3, 1],
-  [8, 4]]);
-  is_deeply([@p], [
-   [[0, 4, 1], [0, 2, 0], 0],
-   [[1, 2, 0], [8, 2, 1], 0],
-   [[8, 3, 1], [8, 4],    0]]);
- }
-
-#latest:;
-if (1)
- {my @p = collapsePath([
-  [0, 12, 1],
-  [0, 11, 1],
-  [0, 10, 0],
-  [1, 10, 0],
-  [2, 10, 0],
-  [3, 10, 0],
-  [4, 10, 0],
-  [5, 10, 0],
-  [6, 10, 0],
-  [7, 10, 0],
-  [8, 10, 0],
-  [9, 10, 0],
-  [10, 10, 0],
-  [11, 10, 0],
-  [12, 10, 0],
-  [13, 10, 0],
-  [14, 10, 1],
-  [14, 9, 1],
-  [14, 8, 1],
-  [14, 7, 1],
-  [14, 6, 1],
-  [14, 5, 1],
-  [14, 4, 1],
-  [14, 3, 1],
-  [14, 2, 1],
-  [14, 1, 1],
-  [14, 0, 0],
-  [15, 0, 0],
-  [16, 0]]);
-  is_deeply([@p], [
-  [[0, 12, 1], [ 0, 10, 0], 0],
-  [[1, 10, 0], [14, 10, 1], 0],
-  [[14, 9, 1], [14,  0, 0], 1],
-  [[15, 0, 0], [16,  0],    1],
-   ]);
  }
 
 #latest:;
@@ -2438,6 +2546,37 @@ if (1)                                                                          
   $d->wire(179, 152, 1312, 135);
   $d->layout;
   $d->svg(svg=>q(test2), pngs=>2);
+ }
+
+#latest:;
+if (1)                                                                          #Tnew #Twire #TtotalLength
+ {my $d = new(width=>5, height=>5, log=>0);
+     $d->wire(0, 0, 3, 0);
+     $d->wire(0, 4, 3, 4);
+     $d->wire(0, 3, 3, 2);
+     $d->wire(0, 1, 2, 2);
+     $d->wire(2, 0, 4, 0);
+     $d->wire(1, 0, 4, 1);
+     $d->wire(2, 4, 3, 3);
+     $d->wire(1, 1, 1, 2);
+     $d->wire(1, 3, 1, 4);
+     $d->layout;
+  $d->svg (svg=>q(test3), pngs=>2);
+  $d->gds2(svg=>q(test3));
+  #say STDERR $d->print;
+  is_deeply($d->print, <<END);
+Length: 153
+   x,   y      X,   Y   L  Name     Path
+   0,   0      3,   0   1           0,0 0,2 12,2 12,0
+   0,   4      3,   4   1           0,16 0,14 12,14 12,16
+   0,   3      3,   2   1           0,12 0,10 12,10 12,8
+   0,   1      2,   2   1           0,4 0,6 8,6 8,8
+   2,   0      4,   0   1           8,0 10,0 10,6 14,6 14,0 16,0
+   1,   0      4,   1   1           4,0 6,0 6,18 18,18 18,4 16,4
+   2,   4      3,   3   1           8,16 10,16 10,12 12,12
+   1,   1      1,   2   1           4,4 4,8
+   1,   3      1,   4   1           4,12 4,16
+END
  }
 
 &done_testing;
