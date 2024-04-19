@@ -144,11 +144,12 @@ sub layout($%)                                                                  
   my $i = temporaryFile;                                                        # Specification of wires to be made
   my $o = temporaryFile;                                                        # Details of connections made
   my $j = q(Diagram.java);                                                      # Code to produce wiring diagram
-  my $x = pixelsPerCell;                                                        # Pixels per cell
+  my $c = pixelsPerCell;                                                        # Pixels per cell
 
-  owf($i, join "\n", $x*$d->width, $x*$d->height, $gsx, $gsy, scalar(@w),       # Diagram details and connections desired ready for Java
-          map {$x * $_}
-          map {@$_{qw(x y X Y)}} @w);
+  owf($i, join "\n", $c*$gsx*$d->width, $c*$gsy*$d->height,                     # Diagram details and connections desired ready for Java
+    $gsx, $gsy, scalar(@w),
+    map {$c * $_}
+    map {($gsx*$_->x,  $gsy*$_->y,  $gsx*$_->X,  $gsy*$_->Y)} @w);
 
   owf($j, $diagram->java(%options));                                            # Run code to produce wiring diagram
   my $r = qx(java $j < $i > $o);
