@@ -31,7 +31,7 @@ use GDS2;
 makeDieConfess;
 
 sub pixelsPerCell  {4}                                                          # Pixels per cell
-sub crossbarOffset {2}                                                          # Offset of crossbars in each cell
+sub crossBarOffset {2}                                                          # Offset of crossbars in each cell
 sub svgGrid        {1}                                                          # Adds a grid to each svg image
 
 #D1 Construct                                                                   # Create a Silicon chip wiring diagram on one or more levels as necessary to make the connections requested.
@@ -132,21 +132,25 @@ sub resetLevels($%)                                                             
 
 sub layout($%)                                                                  # Layout the wires using Java
  {my ($diagram, %options) = @_;                                                 # Diagram, options
+  my $gsx = $options{gsx} // 1;                                                 # Global scale x
+  my $gsy = $options{gsy} // 1;                                                 # Global scale y
+
   my $d = $diagram;                                                             # Shorten name
      $d->resetLevels;                                                           # Reset for new layout
 
   my @w = $d->wires->@*;
   return unless @w;                                                             # Nothing to layout
+
   my $i = temporaryFile;                                                        # Specification of wires to be made
   my $o = temporaryFile;                                                        # Details of connections made
   my $j = q(Diagram.java);                                                      # Code to produce wiring diagram
   my $x = pixelsPerCell;                                                        # Pixels per cell
 
-  owf($i, join "\n", $x*$d->width, $x*$d->height, scalar(@w),                   # Divide each cell into 4 sub cells == pixels
+  owf($i, join "\n", $x*$d->width, $x*$d->height, $gsx, $gsy, scalar(@w),       # Diagram details and connections desired ready for Java
           map {$x * $_}
           map {@$_{qw(x y X Y)}} @w);
 
-  owf($j, $diagram->java);                                                      # Run code to produce wiring diagram
+  owf($j, $diagram->java(%options));                                            # Run code to produce wiring diagram
   my $r = qx(java $j < $i > $o);
   say STDERR $r if $r =~ m(\S);
 
@@ -195,11 +199,18 @@ my sub distance($$$$)                                                           
 
 #D1 Shortest Path                                                               # Find the shortest path using compiled code
 
-sub java                                                                        #P Using Java as it is faster than Perl to layout the connections
- {my $pixelsPerCell  = pixelsPerCell;
-  my $crossbarOffset = crossbarOffset;
+sub java($%)                                                                    #P Using Java as it is faster than Perl to layout the connections
+ {my ($diagram, %options) = @_;                                                 # Options
+  my $pixelsPerCell  = pixelsPerCell;
+  my $crossBarOffset = crossBarOffset;
+  my $j              = &loadJava;
+  $j =~  s(pixelsPerCell = 4)  (pixelsPerCell = $pixelsPerCell)s;
+  $j =~ s(crossBarOffset = 4) (crossBarOffset = $crossBarOffset)s;
+  $j
+ }
 
-  <<END
+sub loadJava()                                                                  #P Load java
+ {<<END
 //------------------------------------------------------------------------------
 // Wiring diagram
 // Philip R Brenan at appaapps dot com, Appa Apps Ltd Inc., 2024
@@ -212,11 +223,18 @@ class Diagram                                                                   
   final int          height;                                                    // Height of diagram
   final Stack<Level> levels = new Stack<>();                                    // Wires levels in the diagram
   final Stack<Wire>   wires = new Stack<>();                                    // Wires in the diagram
-  final int   pixelsPerCell = $pixelsPerCell;                                   // Number of pixels along one side of a cell
-  final int  crossBarOffset = $crossbarOffset;                                  // Offset of the pixels in each cross bar from the edge of the cell
+  final int   pixelsPerCell = 4;                                                // Number of pixels along one side of a cell
+  final int  crossBarOffset = 2;                                                // Offset of the pixels in each cross bar from the edge of the cell
+  final int             gsx;                                                    // Global scale factor x - number of cells between pins in X
+  final int             gsy;                                                    // Global scale factor y - number of cells between pins in Y
+  final int       interViaX;                                                    // Number of pixels between pins in X
+  final int       interViaY;                                                    // Number of pixels between pins in Y
 
-  public Diagram(int Width, int Height)                                         // Diagram
+  public Diagram(int Width, int Height, int Gsx, int Gsy)                       // Diagram
    {width = Width; height = Height;
+    gsx   = Gsx;   gsy    = Gsy;
+    interViaX = gsx * pixelsPerCell;
+    interViaY = gsy * pixelsPerCell;
     new Level();                                                                // A diagram has at least one level
    }
 
@@ -429,18 +447,19 @@ class Diagram                                                                   
       if (X >= width || Y >= height)
         stop("Finish out side of diagram", X, Y, width, height);
 
-      if (x % pixelsPerCell > 0 || y % pixelsPerCell > 0)
+
+      if (x % interViaX > 0 || y % interViaY > 0)
         stop("Start not on a via", x, y);
 
-      if (X % pixelsPerCell > 0 || Y % pixelsPerCell > 0)
+      if (X % interViaX > 0 || Y % interViaY > 0)
         stop("Finish not on a via", X, Y);
 
       for   (int i = 0; i < width;  ++i)                                        // Clear the searched space
         for (int j = 0; j < height; ++j)
           d[i][j] = 0;
 
-      for  (int i = -crossBarOffset; i <= crossBarOffset; ++i)                  // Add metal around via
-       {for(int j = -crossBarOffset; j <= crossBarOffset; ++j)
+      for  (int i = -crossBarOffset; i <= interViaX - crossBarOffset; ++i)      // Add metal around via
+       {for(int j = -crossBarOffset; j <= interViaY - crossBarOffset; ++j)
          {setIx(x+i, y, true); setIx(X+i, Y, true);
           setIy(x, y+j, true); setIy(X, Y+j, true);
          }
@@ -448,8 +467,8 @@ class Diagram                                                                   
 
       found = findShortestPath();                                               // Shortest path
 
-      for  (int i = -crossBarOffset; i <= crossBarOffset; ++i)                  // Remove metal around via
-       {for(int j = -crossBarOffset; j <= crossBarOffset; ++j)
+      for  (int i = -crossBarOffset; i <= interViaX - crossBarOffset; ++i)      // Remove metal around via
+       {for(int j = -crossBarOffset; j <= interViaY - crossBarOffset; ++j)
          {setIx(x+i, y, false); setIx(X+i, Y, false);
           setIy(x, y+j, false); setIy(X, Y+j, false);
          }
@@ -534,7 +553,9 @@ class Diagram                                                                   
   public static void main(String[] args)                                        // Process a file containing a list if wires to be placed and write out the corresponding diagram
    {final int Width  = S.nextInt();
     final int Height = S.nextInt();
-    final Diagram d  = new Diagram(Width, Height);
+    final int Gsx    = S.nextInt();
+    final int Gsy    = S.nextInt();
+    final Diagram d  = new Diagram(Width, Height, Gsx, Gsy);
     final int wires  = S.nextInt();
     for (int i = 0; i < wires; i++)                                             // Process each wire
      {final int sx = S.nextInt(), sy = S.nextInt(),
@@ -564,14 +585,14 @@ class Diagram                                                                   
 
 //TEST 1
 /*
-16 16
+16 16 1 1
 0
 ----
 */
 
 //TEST 2
 /*
-16 16
+16 16 1 1
 3
 0 4  4  4
 0 8  4  8
@@ -584,7 +605,7 @@ class Diagram                                                                   
 
 //TEST 3
 /*
-16 16
+16 16 1 1
 2
 4  4   8  4
 0  4  12  4
@@ -595,7 +616,7 @@ class Diagram                                                                   
 
 //TEST 4
 /*
-16 16
+16 16 1 1
 1
 0 0 4 0
 ----
@@ -605,11 +626,20 @@ class Diagram                                                                   
 
 //TEST 5
 /*
-16 16
+16 16 1 1
 1
 0 0 12 0
 ----
 [1, [{x=>0, y=>0, height=>3, onX=>1}, {x=>0, y=>2, width=>13, onX=>1}, {x=>12, y=>0, height=>3, onX=>1}]]
+*/
+
+//TEST 6D
+/*
+32 32 2 2
+1
+0 8 0 16
+----
+[1, [{x=>0, y=>8, height=>9, onX=>0}]]
 */
 END
  }
