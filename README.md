@@ -18,16 +18,63 @@ file:///home/phil/perl/cpan/SiliconChipWiring/lib/Silicon/Chip/svg/xy2\_1.svg
 
 ## Assumptions
 
-The gates are on the bottom layer if the chip.  Above the gates layer there as
-many wiring levels as are needed to connect the gates. Vertical vias run from
-the pins of the gates to each layer, so each vertical via can connect to an
-input pin or an output pin of a gate.  On each level some of the vias (hence
-gate pins) are connected together by L shaped strips of metal conductor running
-along X and Y. The Y strips can cross over the X strips.  Each gate input pin
-is connect to no more than one gate output pin.  Each gate output pin is
-connected to no more than one gate input pin.  [Silicon::Chip](https://metacpan.org/pod/Silicon%3A%3AChip) automatically
-inserts fan outs to enforce this rule. The fan outs look like sea shells on the
-gate layout diagrams.
+Wires are either one pixel wide or one pixel deep.
+
+The minimum spacing between gate pins is 4 pixels corresponding to a gate scale
+of gsx=>1 or gsy=>1
+
+Wires are arranged in crossbars running along x or y on paired levels separated
+by insulation.
+
+We can step between the crossbars using vias located at intervals of 4\*gsx in x
+along the x crossbars and likewise 4\*gsy in y along the y cross bars.
+
+Vertical
+
+The vertical arrangement of the paired levels of x and y crossbars viewed from
+the side is:
+
+    Y cross bar
+    Insulation
+    X cross bar
+    Insulation
+
+Horizontal
+
+The horizontal arrangement of the paired levels of x and y crossbars viewed from
+the top with gsx = gsy = 1 is:
+
+    y   y   y   y   y
+  xxyxxxyxxxyxxxyxxxyx
+    y   y   y   y   y
+  V y V y V y V y V y
+    y   y   y   y   y
+  xxyxxxyxxxyxxxyxxxyx
+    y   y   y   y   y
+  V y V y V y V y V y
+
+V - vertical Via
+x - X cross bar
+y - Y cross bar
+
+The horizontal arrangement of the paired levels of x and y crossbars viewed from
+the top with gsx = 2 and gsy = 1 is:
+
+    y   y   y   y   y
+  xxyxxxyxxxyxxxyxxxyx
+    y   y   y   y   y
+  V y   y V y   y V y
+    y   y   y   y   y
+  xxyxxxyxxxyxxxyxxxyx
+    y   y   y   y   y
+  V y V y V y V y V y
+
+V - vertical Via
+x - X cross bar
+y - Y cross bar
+
+The missing vias enables more ways to connect to the existing vias at a cost of
+requiring more surface area to layout a given set of gates.
 
 # Description
 
