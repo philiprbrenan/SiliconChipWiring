@@ -14,20 +14,6 @@ use Data::Table::Text qw(:all);
 use Svg::Simple;
 use GDS2;
 
-#  Vertical
-#  Y cross bar  There are 4 sub levels within each wiring level. The sub levels are connected by the vertical vias described in the next comment.
-#  Insulation   The sea of gates is formed at level 0 and is pre-manufactured by the wafer vendor.  Our job is just to connect them.
-#  X cross bar
-#  Insulation
-
-#  Horizontal
-#  ..y        Each cell is divided into 16 sub cells that are arranged to permit
-#  xxyx       the via (V) connect with the X and Y crossbars.  There is a layer
-#  ..y.       of insulation under each of the X and Y cross bars making 4 sub
-#  V.y.       levels per level.  The dots . represent areas with no metal so
-#             they do not conduct unless metal is added during lithography.
-# During wire connection connection, the . next to V are assumed to have metal so that the via can connect to the crossbars.
-
 makeDieConfess;
 
 sub pixelsPerCell  {4}                                                          # Pixels per cell
@@ -39,21 +25,18 @@ sub svgGrid        {1}                                                          
 sub new(%)                                                                      # New wiring diagram.
  {my (%options) = @_;                                                           # Options
 
-  my ($w, $h) = @options{qw(width height)};
-  defined($w) or confess "w";
-  defined($h) or confess "h";
-
   my $d = genHash(__PACKAGE__,                                                  # Wiring diagram
     options=> \%options,                                                        # Creation options
     log    => $options{log},                                                    # Log activity if true
-    width  => $options{width},                                                  # Width of chip
-    height => $options{height},                                                 # Height of chip
+    width  => $options{width},                                                  # Width of chip,  if not specified an estimated value will be used
+    height => $options{height},                                                 # Height of chip, if not specified an estimated value will be used
     wires  => [],                                                               # Wires on diagram
     levels => 0,                                                                # Levels in use
     levelX => {},                                                               # {level}{x}{y} - available cells in X  - used cells are deleted. Normally if present the cell, if present has a positive value.  If it has a negative it is a temporary addition for the purpose of connecting the end points of the wires to the vertical vias.
     levelY => {},                                                               # {level}{x}{y} - available cells in Y
+    gsx    => $options{gsx} // 1,                                               # Gate scale in x
+    gsy    => $options{gsy} // 1,                                               # Gate scale in y
    );
-
   $d
  }
 
@@ -132,24 +115,33 @@ sub resetLevels($%)                                                             
 
 sub layout($%)                                                                  # Layout the wires using Java
  {my ($diagram, %options) = @_;                                                 # Diagram, options
-  my $gsx = $options{gsx} // 1;                                                 # Global scale x
-  my $gsy = $options{gsy} // 1;                                                 # Global scale y
-
-  my $d = $diagram;                                                             # Shorten name
-     $d->resetLevels;                                                           # Reset for new layout
+  my $d   = $diagram;                                                           # Shorten name
 
   my @w = $d->wires->@*;
   return unless @w;                                                             # Nothing to layout
+
+  $d->resetLevels;                                                              # Reset for new layout
+
+  my $width; my $height;                                                        # Find width and height of diagram
+  for my $w(@w)                                                                 # Each wire
+   {my ($x, $y, $X, $Y) = @$w{qw(x y X Y)};
+    $width  = maximum($width,  $x, $X);
+    $height = maximum($height, $y, $Y);
+   }
+
+  $d->width  //= $width  + $d->gsx * pixelsPerCell - 1;                         # Update dimensions if none were supplied
+  $d->height //= $height + $d->gsy * pixelsPerCell - 1;
 
   my $i = temporaryFile;                                                        # Specification of wires to be made
   my $o = temporaryFile;                                                        # Details of connections made
   my $j = q(Diagram.java);                                                      # Code to produce wiring diagram
   my $c = pixelsPerCell;                                                        # Pixels per cell
 
-  owf($i, join "\n", $c*$gsx*$d->width, $c*$gsy*$d->height,                     # Diagram details and connections desired ready for Java
-    $gsx, $gsy, scalar(@w),
-    map {$c * $_}
-    map {($gsx*$_->x,  $gsy*$_->y,  $gsx*$_->X,  $gsy*$_->Y)} @w);
+  my $gsx = $diagram->gsx;                                                      # Gate scale x
+  my $gsy = $diagram->gsy;                                                      # Gate scale y
+
+  owf($i, join "\n", $d->width, $d->height, $gsx, $gsy, scalar(@w),             # Diagram details and connections desired ready for Java
+    map {($_->x, $_->y, $_->X, $_->Y)} @w);                                     # Start and end of each wire
 
   owf($j, $diagram->java(%options));                                            # Run code to produce wiring diagram
   my $r = qx(java $j < $i > $o);
@@ -169,6 +161,7 @@ sub layout($%)                                                                  
       push $w->p->@*, $t;
      }
    }
+
   $d->levels = maximum map {$_->l} $d->wires->@*;                               # Number of levels
  }
 
@@ -732,8 +725,8 @@ sub printPath($$)                                                               
      }
    }
   my ($x, $y, $X, $Y) = @$wire{qw(x y X Y )};                                   # Start and finish
-  substr($s[$y*4], $x*4, 1) = 'S';                                              # Start
-  substr($s[$Y*4], $X*4, 1) = 'F';                                              # Finish
+  substr($s[$y], $x, 1) = 'S';                                                  # Start
+  substr($s[$Y], $X, 1) = 'F';                                                  # Finish
   join "\n", @s, '';
  }
 
@@ -798,6 +791,9 @@ sub printCells($$)                                                              
 sub svg($%)                                                                     # Draw the bus lines by level.
  {my ($D, %options) = @_;                                                       # Wiring diagram, options
 
+  my $gsx = $options{gsx} //= 1;                                                # Global scale X
+  my $gsy = $options{gsy} //= 1;                                                # Global scale X
+
   if (defined(my $l = $options{level}))                                         # Draw the specified level
    {$D->svgLevel($l, %options);
    }
@@ -814,13 +810,15 @@ my $changeColor = 0;                                                            
 
 my sub darkSvgColor                                                             # Generate a random dark color in hexadecimal format
  {my @r = map {int(rand 128)} 1..3;
-  $r[$changeColor++ % @r] += 128;                                                                # Make one component lighter
+  $r[$changeColor++ % @r] += 128;                                               # Make one component lighter
 
   sprintf "#%02X%02X%02X", @r;
  }
 
 sub svgLevel($$%)                                                               #P Draw the bus lines by level.
  {my ($D, $level, %options) = @_;                                               # Wiring diagram, level, options
+  my $gsx = $D->gsx;                                                            # Global scale in X
+  my $gsy = $D->gsy;                                                            # Global scale in Y
   my $Nl = 4;                                                                   # Wiring layers within each level
 
   my @defaults = (defaults=>                                                    # Default values
@@ -830,7 +828,7 @@ sub svgLevel($$%)                                                               
     fill         => "transparent",
    });
 
-  my $svg = Svg::Simple::new(@defaults, %options, grid=>svgGrid);               # Draw each wire via Svg. Grid set to 1 produces a grid that can be helpful debugging layout problems
+  my $svg = Svg::Simple::new(@defaults, grid=>svgGrid);                         # Draw each wire via Svg. Grid set to 1 produces a grid that can be helpful debugging layout problems
 
   for my $w($D->wires->@*)                                                      # Each wire in X
    {my ($l, $p) = @$w{qw(l p)};                                                 # Level and path
@@ -841,26 +839,25 @@ sub svgLevel($$%)                                                               
 
     for my $i(keys @s)                                                          # Index segments
      {my $s = $s[$i];                                                           # Segment along path
-      my ($x, $y, $X, $Y) = map {$_ / pixelsPerCell} @$s{qw(x y X Y)};          # Start x, y, end X, Y
+      my ($x, $y, $X, $Y) = @$s{qw(x y X Y)};                                   # Start x, y, end X, Y
+      my $w = $X - $x; my $h = $Y - $y;                                         # The segments are always arranged so that x < X and y < Y
 
       my $L = $l * $Nl + ($s[2] ? 2 : 0);                                       # Sub level in wiring level
       my $I = $l * $Nl + 1;                                                     # The insulation layer between the x and y crossbars.  We connect the x cross bars to the y cross bars through this later everytime we change direction in a wiring level.
 
-      $svg->path(d=>"M $x $y L $X $y L $X $Y L $x $Y Z", fill=>$dc);            # Draw segment
+      $svg->rect(x=>$x, y=>$y, width=>$w, height=>$h, fill=>$dc);               # Draw rectangle representing segment
 
       if (defined($S) and $s->o != $S->o)                                       # Change of level
-       {my ($x, $y) = map {$_/pixelsPerCell} $D->intersect($w, $s, $S);
-        my  $x1 = $x + 1/12; my $x2 = $x + 1/6;
-        my  $y1 = $y + 1/12; my $y2 = $y + 1/6;
-        $svg->path(d=>"M $x1 $y1 L $x2 $y1 L $x2 $y2 L $x1 $y2 Z", stroke=>"black", stroke_width=>1/48); # Show change of level
+       {my ($x, $y) = $D->intersect($w, $s, $S);
+        $svg->rect(x=>$x + 1/3, y=>$y + 1/3, width=>1/3, height=>1/3, stroke=>"black", stroke_width=>1/48); # Show change of level
        }
       $S = $s;
      }
-    $svg->rect(x=>$w->x, y=>$w->y, width=>1/4, height=>1/4, fill=>"darkGreen"); # Draw start of wire
-    $svg->rect(x=>$w->X, y=>$w->Y, width=>1/4, height=>1/4, fill=>"darkRed");   # Draw end   of wire
+    $svg->rect(x=>$w->x, y=>$w->y, width=>1, height=>1, fill=>"darkGreen");     # Draw start of wire
+    $svg->rect(x=>$w->X, y=>$w->Y, width=>1, height=>1, fill=>"darkRed");       # Draw end   of wire
    }
 
-  my $t = $svg->print(width=>$D->width+1, height=>$D->height+1);                # Text of svg
+  my $t = $svg->print;                                                          # Text of svg
 
   if (my $f = $options{svg})                                                    # Optionally write to an svg file
    {my $F = fpe q(svg), "${f}_$level", q(svg);                                  # Write each level into a separate file
@@ -873,9 +870,14 @@ sub svgLevel($$%)                                                               
 
 sub gds2($%)                                                                    # Draw the wires using GDS2
  {my ($diagram, %options) = @_;                                                 # Wiring diagram, output file, options
+  my $gsx = $diagram->gsx;                                                      # Global scale in X
+  my $gsy = $diagram->gsy;                                                      # Global scale in Y
+  my @w  = $diagram->wires->@*;                                                 # Wires
+  return unless @w;                                                             # Nothing to draw
+
   my $gdsBlock  = $options{block};                                              # Existing GDS2 block
   my $gdsOut    = $options{svg};                                                # Write a newly created gds2 block to this file in the gds sub folder
-  my $wireWidth = 1/4;                                                          # Width of a wire
+  my $wireWidth = 1;                                                            # Width of a wire
 
   my $g = sub                                                                   # Draw as Graphics Design System 2 either inside an existing gds file or create a new one
    {return $gdsBlock if defined $gdsBlock;                                      # Drawing in an existing block
@@ -886,11 +888,9 @@ sub gds2($%)                                                                    
     $g
    }->();
 
-  my $s  = $wireWidth/2;                                                        # Half width of the wire
-  my $t  = 1/2 + $s;                                                            # Center of wire
-  my $S  = $wireWidth; # 2 * $s                                                 # Width of wire
-  my @w  = $diagram->wires->@*;                                                 # Wires
-  my $Nl = 4;                                                                   # Wiring layers within each level
+  my $Nl = pixelsPerCell;                                                       # Wiring layers within each level
+  my $vx = $gsx * pixelsPerCell;                                                # Positions of vias in X
+  my $vy = $gsy * pixelsPerCell;                                                # Positions of vias in Y
 
   my $width  = $diagram->width;                                                 # Width
   my $height = $diagram->height;                                                # Height
@@ -899,8 +899,10 @@ sub gds2($%)                                                                    
    {for my $wl(1..$levels)                                                      # Vias
      {for my $l(0..$Nl-1)                                                       # Insulation, x layer, insulation, y layer
        {for   my $x(0..$width)                                                  # Gate io pins run vertically along the "vias"
-         {for my $y(0..$height)
-           {my $x1 = $x; my $y1 = $y;
+         {next unless $x % $vx == 0;
+          for my $y(0..$height)
+           {next unless $y % $vy == 0;
+            my $x1 = $x; my $y1 = $y;
             my $x2 = $x1 + $wireWidth; my $y2 = $y1 + $wireWidth;
             $g->printBoundary(-layer=>$wl*$Nl+$l, -xy=>[$x1,$y1, $x2,$y1, $x2,$y2, $x1,$y2]); # Via
            }
@@ -918,10 +920,9 @@ sub gds2($%)                                                                    
 
     my sub via($$$)                                                             # Draw a vertical connector. The vertical connectors are known as vias and transmit the gate inputs and outputs to the various wiring layers.
      {my ($x, $y, $l) = @_;                                                     # Options
-      $g->printBoundary(-layer=>$l*$Nl+2, -xy=>[$x-$s,$y-$s, $x+$s,$y-$s, $x+$s,$y+$s, $x-$s,$y+$s]); # Vertical connector
+      $g->printBoundary(-layer=>$l*$Nl+2, -xy=>[$x,$y, $x+1,$y, $x+1,$y+1, $x,$y+1]); # Vertical connector
      }
 
-    #say STDERR wireHeader;
     for my $j(keys @w)                                                          # Layout each wire
      {my $w = $w[$j];                                                           # Wire
       my $l = $w->l;                                                            # Level wire is on
@@ -930,7 +931,6 @@ sub gds2($%)                                                                    
       for my $i(keys @s)                                                        # Index segments
        {my $s = $s[$i];                                                         # Segment along path
         my ($x, $y, $X, $Y) = @$s{qw(x y X Y)};                                 # Start x, y, end X, Y
-        $x /= 4; $y /= 4; $X /= 4; $Y /= 4;                                     # Scale
 
         my $L = $l * $Nl + ($s->o ? 0 : 2);                                     # Sub level in wiring level
         my $I = $l * $Nl + 1;                                                   # The insulation layer between the x and y crossbars.  We connect the x cross bars to the y cross bars through this later everytime we change direction in a wiring level.
@@ -938,10 +938,9 @@ sub gds2($%)                                                                    
         $g->printBoundary(-layer=>$L, -xy=>[$x,$y, $X,$y, $X,$Y, $x,$Y]);       # Fill in cell
 
         if (defined($S) and $s->o != $S->o)                                     # Change of level
-         {my ($x, $y) = map {$_/4} $diagram->intersect($w, $s, $S);
-          $g->printBoundary(-layer=>$I, -xy=>[$x,$y, $x+1/4,$y, $x+1/4,$y+1/4, $x,$y+1/4]); # Step though insulation layer to connect the X crossbar to the Y crossbar.
+         {my ($x, $y) = $diagram->intersect($w, $s, $S);
+          $g->printBoundary(-layer=>$I, -xy=>[$x,$y, $x+1,$y, $x+1,$y+1, $x,$y+1]); # Step though insulation layer to connect the X crossbar to the Y crossbar.
          }
-#        $g->printText(-xy=>[$x+1/8, $y+1/8], -string=>($j+1).".$i");            # Y coordinate
         $S = $s;
        }
      }
@@ -992,16 +991,63 @@ file:///home/phil/perl/cpan/SiliconChipWiring/lib/Silicon/Chip/svg/xy2_1.svg
 
 =head2 Assumptions
 
-The gates are on the bottom layer if the chip.  Above the gates layer there as
-many wiring levels as are needed to connect the gates. Vertical vias run from
-the pins of the gates to each layer, so each vertical via can connect to an
-input pin or an output pin of a gate.  On each level some of the vias (hence
-gate pins) are connected together by L shaped strips of metal conductor running
-along X and Y. The Y strips can cross over the X strips.  Each gate input pin
-is connect to no more than one gate output pin.  Each gate output pin is
-connected to no more than one gate input pin.  L<Silicon::Chip> automatically
-inserts fan outs to enforce this rule. The fan outs look like sea shells on the
-gate layout diagrams.
+Wires are either one pixel wide or one pixel deep.
+
+The minimum spacing between gate pins is 4 pixels corresponding to a gate scale
+of gsx=>1 or gsy=>1
+
+Wires are arranged in crossbars running along x or y on paired levels separated
+by insulation.
+
+We can step between the crossbars using vias located at intervals of 4*gsx in x
+along the x crossbars and likewise 4*gsy in y along the y cross bars.
+
+Vertical
+
+The vertical arrangement of the paired levels of x and y crossbars viewed from
+the side is:
+
+  Y cross bar
+  Insulation
+  X cross bar
+  Insulation
+
+Horizontal
+
+The horizontal arrangement of the paired levels of x and y crossbars viewed from
+the top with gsx = gsy = 1 is:
+
+  y   y   y   y   y
+xxyxxxyxxxyxxxyxxxyx
+  y   y   y   y   y
+V y V y V y V y V y
+  y   y   y   y   y
+xxyxxxyxxxyxxxyxxxyx
+  y   y   y   y   y
+V y V y V y V y V y
+
+V - vertical Via
+x - X cross bar
+y - Y cross bar
+
+The horizontal arrangement of the paired levels of x and y crossbars viewed from
+the top with gsx = 2 and gsy = 1 is:
+
+  y   y   y   y   y
+xxyxxxyxxxyxxxyxxxyx
+  y   y   y   y   y
+V y   y V y   y V y
+  y   y   y   y   y
+xxyxxxyxxxyxxxyxxxyx
+  y   y   y   y   y
+V y V y V y V y V y
+
+V - vertical Via
+x - X cross bar
+y - Y cross bar
+
+The missing vias enables more ways to connect to the existing vias at a cost of
+requiring more surface area to layout a given set of gates.
 
 =head1 Description
 
@@ -2072,6 +2118,8 @@ eval {goto latest}                              unless $ENV{GITHUB_ACTIONS};;
 my sub  ok($)        {!$_[0] and confess; &ok( $_[0])}
 my sub nok($)        {&ok(!$_[0])}
 
+sub m4($$$$) {map{4*$_} @_}                                                     # Scale parameters by so that they start on vias
+
 # Tests
 
 #latest:;
@@ -2083,9 +2131,10 @@ if (1)                                                                          
 
 #latest:;
 if (1)                                                                          #TnumberOfWires
- {my      $d = new(width=>3, height=>2);
-  my $w = $d->wire(1, 1, 2, 1, n=>'a');
+ {my      $d = new;
+  my $w = $d->wire(m4(1, 1, 2, 1), n=>'a');
           $d->layout;
+
   is_deeply($d->numberOfWires, 1);
   is_deeply($d->printPath($w), <<END);
 .........
@@ -2099,8 +2148,8 @@ END
 
 #latest:;
 if (1)                                                                          #Tsvg #Tgds2 #Tlength
- {my      $d = new(width=>2, height=>3);
-  my $w = $d->wire(1, 1, 1, 2, n=>'b');
+ {my      $d = new;
+  my $w = $d->wire(m4(1, 1, 1, 2), n=>'b');
           $d->layout;
   is_deeply($d->length($w), 5);
   is_deeply($d->printPath($w), <<END);
@@ -2120,8 +2169,8 @@ END
 
 #latest:;
 if (1)                                                                          #TprintPath
- {my      $d = new(width=>3, height=>3);
-  my $a = $d->wire(1, 1, 2, 2, n=>'a');
+ {my      $d = new;
+  my $a = $d->wire(m4(1, 1, 2, 2), n=>'a');
           $d->layout;
   is_deeply($d->printPath($a), <<END);
 .........
@@ -2140,40 +2189,46 @@ END
 
 #latest:;
 if (1)                                                                          #Tprint #TprintWire #TprintCode #TprintInOrder
- {my      $d = new(width=>3, height=>3);
-  my $a = $d->wire(1, 1, 2, 1, n=>'a');
-  my $b = $d->wire(1, 2, 2, 2, n=>'b');
+ {my      $d = new;
+  my $a = $d->wire(m4(1, 1, 2, 1), n=>'a');
+  my $b = $d->wire(m4(1, 2, 2, 2), n=>'b');
           $d->layout;
-  is_deeply($d->printWire($a), '   1,   1      2,   1   1  a        4,4 8,4');
+  is_deeply($d->printWire($a), '   4,   4      8,   4   1  a        16,16 4,4');
+  #say STDERR $d->print; exit;
   is_deeply($d->print, <<END);
 Length: 10
    x,   y      X,   Y   L  Name     Path
-   1,   1      2,   1   1  a        4,4 8,4
-   1,   2      2,   2   1  b        4,8 8,8
+   4,   4      8,   4   1  a        16,16 4,4
+   4,   8      8,   8   1  b        16,32 4,8
 END
-  is_deeply($d->printCode, <<END);
-Silicon::Chip::Wiring::new(width=>3, height=>3);
-\$d->wire(   1,    1,    2,    1);
-\$d->wire(   1,    2,    2,    2);
+
+  #say STDERR $d->printCode; exit;
+  is_deeply($d->printCode, <<'END');
+Silicon::Chip::Wiring::new(width=>12, height=>12);
+$d->wire(   4,    4,    8,    4);
+$d->wire(   4,    8,    8,    8);
 END
+
+  #say STDERR $d->printInOrder; exit;
   is_deeply($d->printInOrder, <<END);
 Length: 10
    x,   y      X,   Y   L  Name     Path
-   1,   1      2,   1   1  a        4,4 8,4
-   1,   2      2,   2   1  b        4,8 8,8
+   4,   4      8,   4   1  a        16,16 4,4
+   4,   8      8,   8   1  b        16,32 4,8
 END
  }
 
 #latest:;
 if (1)                                                                          #Tnew #Twire #TtotalLength
- {my      $d = new(width=>4, height=>3, log=>1);
-  my $a = $d->wire(0, 1, 2, 1, n=>'a');
+ {my      $d = new;
+  my $a = $d->wire(m4(0, 1, 2, 1), n=>'a');
           $d->layout;
 
+  #say STDERR $d->print; exit;
   is_deeply($d->print, <<END);
 Length: 13
    x,   y      X,   Y   L  Name     Path
-   0,   1      2,   1   1  a        0,4 0,2 8,2 8,4
+   0,   4      8,   4   1  a        0,16 0,2 8,2 8,4
 END
 
   is_deeply($d->printPath($a), <<END);
@@ -2187,14 +2242,15 @@ END
 
 #latest:;
 if (1)                                                                          #
- {my      $d = new(width=>4, height=>3, log=>1);
-  my $b = $d->wire(1, 0, 1, 2, n=>'b');
+ {my      $d = new;
+  my $b = $d->wire(m4(1, 0, 1, 2), n=>'b');
           $d->layout;
 
+  #say STDERR $d->printInOrder; exit;
   is_deeply($d->print, <<END);
 Length: 13
    x,   y      X,   Y   L  Name     Path
-   1,   0      1,   2   1  b        4,0 2,0 2,8 4,8
+   4,   0      4,   8   1  b        16,0 2,0 2,8 4,8
 END
 
   is_deeply($d->printPath($b), <<END);
@@ -2212,14 +2268,15 @@ END
 
 #latest:;
 if (1)                                                                          #
- {my      $d = new(width=>4, height=>3, log=>1);
-  my $c = $d->wire(2, 0, 2, 2, n=>'c');
+ {my      $d = new;
+  my $c = $d->wire(m4(2, 0, 2, 2), n=>'c');
           $d->layout;
 
+  #say STDERR $d->printInOrder; exit;
   is_deeply($d->print, <<END);
 Length: 13
    x,   y      X,   Y   L  Name     Path
-   2,   0      2,   2   1  c        8,0 6,0 6,8 8,8
+   8,   0      8,   8   1  c        32,0 6,0 6,8 8,8
 END
 
   is_deeply($d->printPath($c), <<END);
@@ -2237,14 +2294,15 @@ END
 
 #latest:;
 if (1)                                                                          #
- {my      $d = new(width=>4, height=>3, log=>1);
-  my $e = $d->wire(0, 2, 1, 1, n=>'e');
+ {my      $d = new;
+  my $e = $d->wire(m4(0, 2, 1, 1), n=>'e');
           $d->layout;
 
+  #say STDERR $d->printInOrder; exit;
   is_deeply($d->print, <<END);
 Length: 9
    x,   y      X,   Y   L  Name     Path
-   0,   2      1,   1   1  e        0,8 2,8 2,4 4,4
+   0,   8      4,   4   1  e        0,32 0,8 2,4 4,4
 END
 
   is_deeply($d->printPath($e), <<END);
@@ -2262,14 +2320,15 @@ END
 
 #latest:;
 if (1)                                                                          #
- {my      $d = new(width=>5, height=>4, log=>1);
-  my $f = $d->wire(0, 3, 4, 0, n=>'f');
+ {my      $d = new;
+  my $f = $d->wire(m4(0, 3, 4, 0), n=>'f');
           $d->layout;
 
+  #say STDERR $d->printInOrder; exit;
   is_deeply($d->print, <<END);
 Length: 29
    x,   y      X,   Y   L  Name     Path
-   0,   3      4,   0   1  f        0,12 0,10 14,10 14,0 16,0
+   0,  12     16,   0   1  f        0,48 0,10 14,10 14,0 16,0
 END
 
   is_deeply($d->printPath($f), <<END);
@@ -2291,13 +2350,14 @@ END
 
 #latest:;
 if (1)                                                                          #
- {my      $d = new(width=>5, height=>4, log=>1);
-  my $F = $d->wire(1, 3, 3, 0, n=>'F');
+ {my      $d = new;
+  my $F = $d->wire(m4(1, 3, 3, 0), n=>'F');
           $d->layout;
+  #say STDERR $d->printInOrder; exit;
   is_deeply($d->print, <<END);
 Length: 21
    x,   y      X,   Y   L  Name     Path
-   1,   3      3,   0   1  F        4,12 4,10 10,10 10,0 12,0
+   4,  12     12,   0   1  F        16,48 4,10 10,10 10,0 12,0
 END
 
   is_deeply($d->printPath($F), <<END);
@@ -2319,14 +2379,15 @@ END
 
 #latest:;
 if (1)                                                                          #Tlayout
- {my      $d = new(width=>4, height=>3, log=>1);
-  my $g = $d->wire(0, 0, 3, 0, n=>'g');
+ {my      $d = new;
+  my $g = $d->wire(m4(0, 0, 3, 0), n=>'g');
           $d->layout;
 
+  #say STDERR $d->printInOrder; exit;
   is_deeply($d->print, <<END);
 Length: 17
    x,   y      X,   Y   L  Name     Path
-   0,   0      3,   0   1  g        0,0 0,2 12,2 12,0
+   0,   0     12,   0   1  g        0,0 0,2 12,2 12,0
 END
 
   is_deeply($d->printPath($g), <<END);
@@ -2338,18 +2399,18 @@ END
 
 #latest:;
 if (1)                                                                          #Tnew #Twire #TtotalLength
- {my        $d = new(width=>5, height=>5, log=>0);
-  my $a =   $d->wire(0, 1, 2, 1, n=>'a');
-  my $b =   $d->wire(1, 0, 1, 2, n=>'b');
-  my $c =   $d->wire(2, 0, 2, 2, n=>'c');
-  my $e =   $d->wire(0, 2, 1, 1, n=>'e');
-  my $f =   $d->wire(0, 3, 4, 0, n=>'f');
-  my $F =   $d->wire(1, 3, 3, 0, n=>'F');
+ {my        $d = new;
+  my $a =   $d->wire(m4(0, 1, 2, 1), n=>'a');
+  my $b =   $d->wire(m4(1, 0, 1, 2), n=>'b');
+  my $c =   $d->wire(m4(2, 0, 2, 2), n=>'c');
+  my $e =   $d->wire(m4(0, 2, 1, 1), n=>'e');
+  my $f =   $d->wire(m4(0, 3, 4, 0), n=>'f');
+  my $F =   $d->wire(m4(1, 3, 3, 0), n=>'F');
 
             $d->layout;
   is_deeply($d->levels, 1);
 
-  my $g =   $d->wire(0, 0, 3, 0, n=>'g');
+  my $g =   $d->wire(m4(0, 0, 3, 0), n=>'g');
 
             $d->layout;
   is_deeply($d->levels, 2);
@@ -2359,13 +2420,13 @@ if (1)                                                                          
   is_deeply($d->printInOrder, <<END);
 Length: 119
    x,   y      X,   Y   L  Name     Path
-   0,   0      3,   0   2  g        0,0 0,2 12,2 12,0
-   0,   1      2,   1   1  a        0,4 0,2 8,2 8,4
-   0,   2      1,   1   1  e        0,8 0,6 4,6 4,4
-   0,   3      4,   0   1  f        0,12 0,10 14,10 14,0 16,0
-   1,   0      1,   2   1  b        4,0 2,0 2,8 4,8
-   1,   3      3,   0   1  F        4,12 4,14 10,14 10,0 12,0
-   2,   0      2,   2   1  c        8,0 6,0 6,8 8,8
+   0,   0     12,   0   2  g        0,0 0,2 12,2 12,0
+   0,   4      8,   4   1  a        0,16 0,2 8,2 8,4
+   0,   8      4,   4   1  e        0,32 0,6 4,6 4,4
+   0,  12     16,   0   1  f        0,48 0,10 14,10 14,0 16,0
+   4,   0      4,   8   1  b        16,0 2,0 2,8 4,8
+   4,  12     12,   0   1  F        16,48 4,12 4,14 10,0 12,0
+   8,   0      8,   8   1  c        32,0 6,0 6,8 8,8
 END
 
   is_deeply($d->printPath($a), <<END);
@@ -2457,156 +2518,32 @@ END
  }
 
 #latest:;
-if (1)                                                                          #
- {my $d = new(width=>90, height=>20);
-     $d->wire( 9, 14, 50,  5);
-     $d->wire(13,  5, 50, 12);
-     $d->wire(13,  8, 54,  5);
-     $d->wire( 5, 11, 42,  5);
-     $d->wire( 9,  2, 42, 12);
-     $d->wire(13,  2, 50,  7);
-     $d->wire(13, 11, 54, 10);
-     $d->wire(13, 14, 54, 15);
-     $d->wire( 5, 14, 42, 10);
-     $d->wire(17,  2, 58,  2);
-     $d->wire( 9,  8, 46,  7);
-     $d->wire( 9, 11, 46, 12);
-     $d->wire( 5,  8, 38, 12);
-     $d->wire( 9,  5, 46,  5);
-     $d->wire( 5,  5, 38,  7);
-     $d->wire( 5,  2, 38,  2);
-     $d->wire(37,  7, 58,  4);
-     $d->wire(41,  7, 62,  4);
-     $d->wire(33,  9, 50,  3);
-     $d->wire(41, 12, 62, 10);
-     $d->wire(45,  2, 62,  8);
-     $d->wire(33, 14, 50,  9);
-     $d->wire(45,  7, 62, 12);
-     $d->wire(37,  4, 54,  8);
-     $d->wire(37,  9, 54, 13);
-     $d->wire(41,  2, 62,  2);
-     $d->wire(33,  2, 46,  9);
-     $d->wire(33,  7, 46, 14);
-     $d->wire(49,  7, 66,  4);
-     $d->wire(33, 12, 50, 14);
-     $d->wire(45, 12, 62, 14);
-     $d->wire(49, 12, 66, 10);
-     $d->wire(53,  2, 66,  8);
-     $d->wire(37,  2, 54,  3);
-     $d->wire(53,  7, 66, 12);
-     $d->wire(29,  7, 42,  3);
-     $d->wire(29, 12, 42,  8);
-     $d->wire(49,  2, 66,  2);
-     $d->wire(57,  7, 70,  4);
-     $d->wire(53, 12, 66, 14);
-     $d->wire(57, 12, 70, 10);
-     $d->wire(61,  2, 70,  8);
-     $d->wire(17, 14, 22,  5);
-     $d->wire(25,  2, 34,  7);
-     $d->wire(29,  4, 38,  9);
-     $d->wire(29,  9, 38, 14);
-     $d->wire(33,  4, 46,  3);
-     $d->wire(21, 14, 30, 10);
-     $d->wire(29, 14, 42, 14);
-     $d->wire(57,  2, 70,  2);
-     $d->wire(65,  7, 74,  4);
-     $d->wire(21,  7, 30,  5);
-     $d->wire(29,  2, 38,  4);
-     $d->wire(65, 12, 74, 10);
-     $d->wire(69,  2, 74,  8);
-     $d->wire(21,  2, 26,  7);
-     $d->wire(25,  4, 34,  5);
-     $d->wire(69,  7, 74, 12);
-     $d->wire(81,  2, 82, 11);
-     $d->wire(21, 12, 30, 12);
-     $d->wire(65,  2, 74,  2);
-     $d->wire(21,  9, 26, 12);
-     $d->wire(73,  7, 78,  4);
-     $d->wire(77, 12, 82,  9);
-     $d->wire(69, 12, 74, 14);
-     $d->wire(21,  4, 26,  5);
-     $d->wire(77,  7, 82,  6);
-   $d->layout;
-   $d->svg(svg=>"testp");
- }
-
-#latest:;
-if (1)                                                                          #
- {my $d = Silicon::Chip::Wiring::new(width=>1528, height=>232);
-  $d->wire(179, 216, 1324, 39);
-  $d->wire(179, 224, 1324, 51);
-  $d->wire(47,  48,  1144, 224);
-  $d->wire(47,  40,  1144, 212);
-  $d->wire(47,  32,  1144, 200);
-  $d->wire(191, 136, 1324, 212);
-  $d->wire(191, 128, 1324, 200);
-  $d->wire(191, 120, 1324, 188);
-  $d->wire(191, 112, 1324, 176);
-  $d->wire(191, 104, 1324, 164);
-  $d->wire(191, 96,  1324, 152);
-  $d->wire(35,  144, 1144, 68);
-  $d->wire(191, 88,  1324, 140);
-  $d->wire(179, 88,  1312, 39);
-  $d->wire(35,  152, 1144, 80);
-  $d->wire(191, 80,  1324, 128);
-  $d->wire(179, 96,  1312, 51);
-  $d->wire(35,  160, 1144, 92);
-  $d->wire(191, 72,  1324, 116);
-  $d->wire(179, 104, 1312, 63);
-  $d->wire(35,  168, 1144, 104);
-  $d->wire(191, 64,  1324, 104);
-  $d->wire(179, 112, 1312, 75);
-  $d->wire(35,  176, 1144, 116);
-  $d->wire(191, 56,  1324, 92);
-  $d->wire(179, 120, 1312, 87);
-  $d->wire(35,  184, 1144, 128);
-  $d->wire(47,  192, 1192, 212);
-  $d->wire(191, 48,  1324, 80);
-  $d->wire(179, 128, 1312, 99);
-  $d->wire(35,  192, 1144, 140);
-  $d->wire(47,  184, 1192, 200);
-  $d->wire(191, 40,  1324, 68);
-  $d->wire(179, 136, 1312, 111);
-  $d->wire(35,  200, 1144, 152);
-  $d->wire(47,  176, 1192, 188);
-  $d->wire(191, 32,  1324, 56);
-  $d->wire(179, 144, 1312, 123);
-  $d->wire(35,  208, 1144, 164);
-  $d->wire(47,  168, 1192, 176);
-  $d->wire(179, 152, 1312, 135);
-  $d->wire(179, 152, 1312, 135);
-  $d->layout;
-  $d->svg(svg=>q(test2), pngs=>2);
- }
-
-#latest:;
 if (1)                                                                          #Tnew #Twire #TtotalLength
- {my $d = new(width=>5, height=>5, log=>0);
-     $d->wire(0, 0, 3, 0);
-     $d->wire(0, 4, 3, 4);
-     $d->wire(0, 3, 3, 2);
-     $d->wire(0, 1, 2, 2);
-     $d->wire(2, 0, 4, 0);
-     $d->wire(1, 0, 4, 1);
-     $d->wire(2, 4, 3, 3);
-     $d->wire(1, 1, 1, 2);
-     $d->wire(1, 3, 1, 4);
+ {my $d = new;
+     $d->wire(0,  0, 12,  0);
+     $d->wire(0, 16, 12, 16);
+     $d->wire(0, 12, 12,  8);
+     $d->wire(0,  4,  8,  8);
+     $d->wire(8,  0, 16,  0);
+     $d->wire(4,  0, 16,  4);
+     $d->wire(8, 16, 12, 12);
+     $d->wire(4,  4,  4,  8);
+     $d->wire(4, 12,  4, 16);
      $d->layout;
   $d->svg (svg=>q(test3), pngs=>2);
   $d->gds2(svg=>q(test3));
-  #say STDERR $d->print;
   is_deeply($d->print, <<END);
 Length: 153
    x,   y      X,   Y   L  Name     Path
-   0,   0      3,   0   1           0,0 0,2 12,2 12,0
-   0,   4      3,   4   1           0,16 0,14 12,14 12,16
-   0,   3      3,   2   1           0,12 0,10 12,10 12,8
-   0,   1      2,   2   1           0,4 0,6 8,6 8,8
-   2,   0      4,   0   1           8,0 10,0 10,6 14,6 14,0 16,0
-   1,   0      4,   1   1           4,0 6,0 6,18 18,18 18,4 16,4
-   2,   4      3,   3   1           8,16 10,16 10,12 12,12
-   1,   1      1,   2   1           4,4 4,8
-   1,   3      1,   4   1           4,12 4,16
+   0,   0     12,   0   1           0,0 0,2 12,2 12,0
+   0,  16     12,  16   1           0,64 0,14 12,14 12,16
+   0,  12     12,   8   1           0,48 0,10 12,10 12,8
+   0,   4      8,   8   1           0,16 0,4 0,6 8,6
+   8,   0     16,   0   1           32,0 8,0 10,0 10,6 14,0 16,0
+   4,   0     16,   4   1           16,0 4,0 6,0 6,18 18,4 16,4
+   8,  16     12,  12   1           32,64 8,16 10,12 12,12
+   4,   4      4,   8   1           16,16 4,4
+   4,  12      4,  16   1           16,48 4,12
 END
  }
 
